@@ -21,7 +21,9 @@ from matgraph.schema import (
     CrystalSystem,
     Edge,
     Element,
+    FormulaPattern,
     Material,
+    OxidationState,
     PropertyClass,
     SpaceGroup,
 )
@@ -133,28 +135,82 @@ def apply_application_rules(
 
 # --- similarity -----------------------------------------------------------
 
+# Every field here is (a) intensive/size-normalized - comparable regardless
+# of which unit cell or supercell a calculation happened to use, (b) on a
+# physically universal scale - not referenced to a per-calculation internal
+# zero, and (c) not redundant with another field already in the vector.
+# Together they span electronic, thermodynamic, structural-density,
+# magnetic, mechanical, and dielectric behaviour: a genuine materials
+# fingerprint rather than an arbitrary handful of numbers.
+#
+# Deliberately excluded, with reasons:
+#   volume, nsites, num_magnetic_sites - NOT intensive: they scale with the
+#     specific unit cell/supercell a calculation happened to use, so two
+#     calculations of the "same" material can disagree on these even when
+#     every intensive property matches.
+#   cbm, vbm, efermi - absolute energies referenced to each calculation's
+#     own internal zero, not a universal scale comparable across different
+#     materials. band_gap (= cbm - vbm) is the physically meaningful,
+#     calculation-independent quantity, and is already included.
+#   is_magnetic - a boolean function of total_magnetization, which is
+#     already in the vector as a continuous value; including both would
+#     double-count the same signal.
+#   e_electronic, e_ionic, refractive_index (n) - derived from / strongly
+#     correlated with dielectric_total (e_total = e_electronic + e_ionic;
+#     n ~ sqrt(e_electronic)). Including all of them would overweight
+#     "polarizability" relative to the other, independent properties.
 SIMILARITY_FIELDS = [
     "band_gap",
     "formation_energy_per_atom",
+    "energy_above_hull",
     "density",
     "total_magnetization",
+    "bulk_modulus_vrh",
+    "shear_modulus_vrh",
+    "universal_anisotropy",
+    "homogeneous_poisson",
+    "dielectric_total",
 ]
 
 
+def _similarity_value(raw: dict[str, Any], field: str) -> float | None:
+    """Pull one SIMILARITY_FIELDS value out of a *raw* MP record. Most fields
+    match the raw JSON key directly, but bulk/shear modulus arrive nested as
+    {"voigt": .., "reuss": .., "vrh": ..} and dielectric_total's raw key is
+    e_total (dielectric_total is the flattened name used on the Material
+    DataPoint, built later in build_graph - not present on the raw dict)."""
+    if field == "bulk_modulus_vrh":
+        return _vrh(raw.get("bulk_modulus"))
+    if field == "shear_modulus_vrh":
+        return _vrh(raw.get("shear_modulus"))
+    if field == "dielectric_total":
+        return raw.get("e_total")
+    return raw.get(field)
+
+
 def _zscore_vectors(materials: list[dict[str, Any]]) -> dict[str, list[float]]:
-    columns = {f: [m[f] for m in materials] for f in SIMILARITY_FIELDS}
+    """Z-score every similarity field, imputing missing values (elastic and
+    dielectric data aren't computed for every material - roughly 84% and 70%
+    coverage respectively) with the column mean, so a missing value
+    contributes neutrally (z=0) rather than skewing the comparison in either
+    direction."""
+    columns = {f: [_similarity_value(m, f) for m in materials] for f in SIMILARITY_FIELDS}
     stats = {}
     for f, values in columns.items():
-        mean = sum(values) / len(values)
-        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        present = [v for v in values if v is not None]
+        mean = sum(present) / len(present) if present else 0.0
+        variance = sum((v - mean) ** 2 for v in present) / len(present) if present else 0.0
         std = math.sqrt(variance) or 1.0
         stats[f] = (mean, std)
 
     vectors = {}
     for m in materials:
-        vectors[m["material_id"]] = [
-            (m[f] - stats[f][0]) / stats[f][1] for f in SIMILARITY_FIELDS
-        ]
+        vec = []
+        for f in SIMILARITY_FIELDS:
+            value = _similarity_value(m, f)
+            mean, std = stats[f]
+            vec.append(0.0 if value is None else (value - mean) / std)
+        vectors[m["material_id"]] = vec
     return vectors
 
 
@@ -194,6 +250,12 @@ def compute_similarity_edges(
     return edges
 
 
+def _vrh(value: dict[str, float] | None) -> float | None:
+    """Extract the Voigt-Reuss-Hill average from an elastic modulus dict
+    (e.g. {"voigt": .., "reuss": .., "vrh": ..}); None when not computed."""
+    return value.get("vrh") if value else None
+
+
 # --- graph construction -----------------------------------------------------
 
 
@@ -210,6 +272,8 @@ def build_graph(
     chemsys_cache: dict[str, ChemicalSystem] = {}
     property_class_cache: dict[tuple[str, str], PropertyClass] = {}
     domain_cache: dict[str, ApplicationDomain] = {}
+    oxidation_state_cache: dict[str, OxidationState] = {}
+    formula_pattern_cache: dict[str, FormulaPattern] = {}
 
     def get_element(symbol: str) -> Element:
         if symbol not in element_cache:
@@ -260,6 +324,16 @@ def build_graph(
             )
         return domain_cache[name]
 
+    def get_oxidation_state(species: str) -> OxidationState:
+        if species not in oxidation_state_cache:
+            oxidation_state_cache[species] = OxidationState(species=species)
+        return oxidation_state_cache[species]
+
+    def get_formula_pattern(pattern: str) -> FormulaPattern:
+        if pattern not in formula_pattern_cache:
+            formula_pattern_cache[pattern] = FormulaPattern(pattern=pattern)
+        return formula_pattern_cache[pattern]
+
     similarity_edges = compute_similarity_edges(
         raw_materials, config["similarity"]["min_edge_weight"], config["similarity"]["top_k"]
     )
@@ -290,6 +364,16 @@ def build_graph(
             for name, rule in domain_matches
         ]
 
+        species = raw.get("possible_species") or []
+        has_oxidation_state = [get_oxidation_state(sp) for sp in species]
+
+        formula_pattern = raw.get("formula_anonymous")
+        has_formula_pattern = (
+            (Edge(relationship_type="has_formula_pattern"), get_formula_pattern(formula_pattern))
+            if formula_pattern
+            else None
+        )
+
         material_nodes[raw["material_id"]] = Material(
             material_id=raw["material_id"],
             formula=raw["formula_pretty"],
@@ -306,11 +390,26 @@ def build_graph(
             total_magnetization=raw["total_magnetization"],
             ordering=raw["ordering"],
             theoretical=raw["theoretical"],
+            cbm=raw.get("cbm"),
+            vbm=raw.get("vbm"),
+            efermi=raw.get("efermi"),
+            is_magnetic=raw.get("is_magnetic") or False,
+            num_magnetic_sites=raw.get("num_magnetic_sites") or 0,
+            bulk_modulus_vrh=_vrh(raw.get("bulk_modulus")),
+            shear_modulus_vrh=_vrh(raw.get("shear_modulus")),
+            universal_anisotropy=raw.get("universal_anisotropy"),
+            homogeneous_poisson=raw.get("homogeneous_poisson"),
+            dielectric_total=raw.get("e_total"),
+            dielectric_electronic=raw.get("e_electronic"),
+            dielectric_ionic=raw.get("e_ionic"),
+            refractive_index=raw.get("n"),
             contains=contains,
             has_space_group=(Edge(relationship_type="has_space_group"), space_group),
             member_of=(Edge(relationship_type="member_of"), chemsys),
             classified_as=classified_as,
             suitable_for=suitable_for,
+            has_oxidation_state=has_oxidation_state,
+            has_formula_pattern=has_formula_pattern,
             # similar_to filled in below, once every Material node exists.
         )
 
