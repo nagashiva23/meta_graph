@@ -1,6 +1,6 @@
 .DS_Store
 .env
-.claude/settings.local.json
+.claude/
 .venv/
 __pycache__/
 *.pyc
