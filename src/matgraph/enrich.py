@@ -41,17 +41,15 @@ def load_elements_table() -> dict[str, dict[str, Any]]:
 
 
 def load_raw_materials(config: dict[str, Any]) -> list[dict[str, Any]]:
-    formulas = [m["formula"] for m in config["materials"]]
-    raw = []
-    for formula in formulas:
-        path = DATA_DIR / f"{formula}.json"
-        if not path.exists():
-            raise FileNotFoundError(
-                f"missing cached record for {formula} at {path} "
-                "(run scripts/fetch_materials.py first)"
-            )
-        raw.append(json.loads(path.read_text()))
-    return raw
+    """Load every cached material from data/raw/ (one JSON file per material_id,
+    listed in _manifest.json - see matgraph.mp_client.fetch_and_cache_bulk)."""
+    manifest_path = DATA_DIR / "_manifest.json"
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            f"no manifest at {manifest_path} (run scripts/fetch_materials.py first)"
+        )
+    material_ids = json.loads(manifest_path.read_text())
+    return [json.loads((DATA_DIR / f"{mid}.json").read_text()) for mid in material_ids]
 
 
 # --- classification -----------------------------------------------------
@@ -168,18 +166,31 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 
 def compute_similarity_edges(
-    materials: list[dict[str, Any]], threshold: float
+    materials: list[dict[str, Any]], min_weight: float, top_k: int
 ) -> dict[str, list[tuple[str, float]]]:
-    """Return {material_id: [(other_material_id, weight), ...]} above threshold."""
+    """Return {material_id: [(other_material_id, weight), ...]}: each material's
+    top_k most similar materials above min_weight.
+
+    A flat global threshold doesn't scale with dataset size - at a few hundred
+    materials a 0.7 cosine cutoff over just 4 dimensions produces tens of
+    thousands of pairs (most materials look "similar enough" to many others),
+    turning similar_to into noise. Capping to each material's nearest
+    neighbours keeps the edge density meaningful regardless of how many
+    materials are in the graph.
+    """
     vectors = _zscore_vectors(materials)
     ids = list(vectors.keys())
     edges: dict[str, list[tuple[str, float]]] = {i: [] for i in ids}
-    for i in range(len(ids)):
-        for j in range(i + 1, len(ids)):
-            sim = _cosine(vectors[ids[i]], vectors[ids[j]])
-            if sim >= threshold:
-                edges[ids[i]].append((ids[j], sim))
-                edges[ids[j]].append((ids[i], sim))
+    for i, id_i in enumerate(ids):
+        sims = []
+        for j, id_j in enumerate(ids):
+            if i == j:
+                continue
+            sim = _cosine(vectors[id_i], vectors[id_j])
+            if sim >= min_weight:
+                sims.append((id_j, sim))
+        sims.sort(key=lambda pair: -pair[1])
+        edges[id_i] = sims[:top_k]
     return edges
 
 
@@ -250,7 +261,7 @@ def build_graph(
         return domain_cache[name]
 
     similarity_edges = compute_similarity_edges(
-        raw_materials, config["similarity"]["min_edge_weight"]
+        raw_materials, config["similarity"]["min_edge_weight"], config["similarity"]["top_k"]
     )
 
     material_nodes: dict[str, Material] = {}
