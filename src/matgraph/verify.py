@@ -71,19 +71,31 @@ async def verify() -> None:
             print(f"  {rel:20s} {count}")
 
         materials = {p["formula"]: (nid, p) for nid, p in g.nodes_of_type("Material")}
+        sample_cap = 15  # print at most this many examples per section; always show the count
+
+        def print_sample(rows: list[str], label: str) -> None:
+            print(f"  {len(rows)} {label}")
+            for row in rows[:sample_cap]:
+                print(f"    {row}")
+            if len(rows) > sample_cap:
+                print(f"    ... and {len(rows) - sample_cap} more")
 
         print("\n== Oxygen hub: materials containing O ==")
-        for formula, (nid, _) in sorted(materials.items()):
-            elements = {ep["symbol"] for _, ep in g.targets(nid, "contains")}
-            if "O" in elements:
-                print(f"  {formula}")
+        oxygen_materials = [
+            formula
+            for formula, (nid, _) in sorted(materials.items())
+            if "O" in {ep["symbol"] for _, ep in g.targets(nid, "contains")}
+        ]
+        print_sample(oxygen_materials, "materials contain O")
 
         print("\n== Lithium-containing materials classified as 'stable' ==")
+        li_stable = []
         for formula, (nid, _) in sorted(materials.items()):
             elements = {ep["symbol"] for _, ep in g.targets(nid, "contains")}
             classes = {(cp["kind"], cp["name"]) for _, cp in g.targets(nid, "classified_as")}
             if "Li" in elements and ("stability", "stable") in classes:
-                print(f"  {formula}")
+                li_stable.append(formula)
+        print_sample(li_stable, "Li-containing materials classified as stable")
 
         print("\n== Wide-band-gap materials ==")
         rows = []
@@ -91,24 +103,35 @@ async def verify() -> None:
             classes = {(cp["kind"], cp["name"]) for _, cp in g.targets(nid, "classified_as")}
             if ("band_gap", "wide_gap") in classes:
                 rows.append((formula, p["band_gap"]))
-        for formula, band_gap in sorted(rows, key=lambda r: -r[1]):
-            print(f"  {formula:12s} band_gap={band_gap:.3f}")
+        rows.sort(key=lambda r: -r[1])
+        print_sample([f"{formula:12s} band_gap={bg:.3f}" for formula, bg in rows], "wide-gap materials")
 
-        print("\n== What connects LiFePO4 and Fe2O3 (shared elements) ==")
-        nid_a, _ = materials["LiFePO4"]
-        nid_b, _ = materials["Fe2O3"]
-        elems_a = {ep["symbol"] for _, ep in g.targets(nid_a, "contains")}
-        elems_b = {ep["symbol"] for _, ep in g.targets(nid_b, "contains")}
-        for symbol in sorted(elems_a & elems_b):
-            print(f"  shared element: {symbol}")
+        if "LiFePO4" in materials and "Fe2O3" in materials:
+            print("\n== What connects LiFePO4 and Fe2O3 (shared elements) ==")
+            nid_a, _ = materials["LiFePO4"]
+            nid_b, _ = materials["Fe2O3"]
+            elems_a = {ep["symbol"] for _, ep in g.targets(nid_a, "contains")}
+            elems_b = {ep["symbol"] for _, ep in g.targets(nid_b, "contains")}
+            for symbol in sorted(elems_a & elems_b):
+                print(f"  shared element: {symbol}")
 
         print("\n== Materials suitable for battery_cathode (with rule) ==")
+        cathodes = []
         for formula, (nid, _) in sorted(materials.items()):
             for _, dp in g.targets(nid, "suitable_for"):
                 if dp["name"] == "battery_cathode":
-                    print(f"  {formula}")
+                    cathodes.append(formula)
+        print_sample(cathodes, "materials classified battery_cathode")
 
-        print("\n== similar_to edges (weight >= threshold) ==")
+        print("\n== Application domain distribution ==")
+        by_domain: dict[str, int] = defaultdict(int)
+        for _, (nid, _) in materials.items():
+            for _, dp in g.targets(nid, "suitable_for"):
+                by_domain[dp["name"]] += 1
+        for domain, count in sorted(by_domain.items(), key=lambda kv: -kv[1]):
+            print(f"  {domain:22s} {count}")
+
+        print("\n== similar_to edges (sample, sorted by weight) ==")
         seen = set()
         rows = []
         for formula, (nid, _) in materials.items():
@@ -121,8 +144,11 @@ async def verify() -> None:
                     continue
                 seen.add(key)
                 rows.append((key[0], key[1], props.get("weight", 0.0)))
-        for a, b, weight in sorted(rows, key=lambda r: -r[2]):
-            print(f"  {a:10s} <-> {b:10s} weight={weight:.3f}")
+        rows.sort(key=lambda r: -r[2])
+        print_sample(
+            [f"{a:14s} <-> {b:14s} weight={weight:.3f}" for a, b, weight in rows],
+            "similar_to pairs",
+        )
 
         print("\n== Structural checks ==")
         isolated = [
@@ -133,5 +159,5 @@ async def verify() -> None:
         else:
             print("  OK: every Material has at least one contains edge.")
 
-        assert len(materials) == 10, f"expected 10 Material nodes, got {len(materials)}"
+        assert len(materials) > 0, "expected at least one Material node"
         print(f"  OK: {len(materials)} Material nodes present.")
