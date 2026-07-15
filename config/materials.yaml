@@ -1,0 +1,71 @@
+# Seed set for Phase 1. Chosen so materials interrelate through shared elements,
+# crystal systems, and property classes rather than forming isolated islands.
+# See docs/PHASE1_PLAN.md section 2 for the rationale behind each pick.
+materials:
+  - formula: LiFePO4
+    note: battery cathode (olivine)
+  - formula: LiCoO2
+    note: battery cathode (layered)
+  - formula: LiMn2O4
+    note: battery cathode (spinel)
+  - formula: Si
+    note: elemental semiconductor
+  - formula: GaAs
+    note: III-V semiconductor
+  - formula: GaN
+    note: III-V wide-gap semiconductor
+  - formula: ZnO
+    note: wide-gap oxide semiconductor
+  - formula: TiO2
+    note: photocatalyst oxide
+  - formula: Fe2O3
+    note: magnetic oxide
+  - formula: BaTiO3
+    note: dielectric / ferroelectric perovskite
+
+# Band-gap buckets (DFT-computed gaps from MP are systematically underestimated
+# relative to experiment, so thresholds are tuned for DFT-scale values).
+band_gap_buckets:
+  - name: metal
+    max: 0.0            # band_gap == 0
+  - name: narrow_gap
+    min: 0.0
+    max: 1.0
+  - name: semiconductor
+    min: 1.0
+    max: 3.0
+  - name: wide_gap
+    min: 3.0
+
+# Thermodynamic stability buckets (energy above hull, eV/atom).
+stability_buckets:
+  - name: stable
+    max: 1.0e-6
+  - name: metastable
+    min: 1.0e-6
+    max: 0.05
+  - name: unstable
+    min: 0.05
+
+# Application domain rules, evaluated in order; a material can match several.
+# Each fired rule is stored on the `suitable_for` edge for explainability.
+application_rules:
+  - domain: battery_cathode
+    rule: "contains Li and a transition metal, and energy_above_hull <= 0.05 eV/atom"
+  - domain: semiconductor_device
+    rule: "0 < band_gap <= 3.5 eV and not metallic"
+  - domain: photocatalyst
+    rule: "contains O and 1.5 <= band_gap <= 3.5 eV"
+  - domain: dielectric
+    rule: "band_gap > 2 eV and |total_magnetization| < 0.1 (non-magnetic)"
+  - domain: magnetic_material
+    rule: "magnetic ordering in {FM, FiM, AFM} and |total_magnetization| >= 0.1, or AFM ordering"
+
+# Elements considered "transition metals" for the battery_cathode rule.
+transition_metals:
+  [Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd]
+
+# similar_to edges: cosine similarity over z-scored property vectors
+# (band_gap, formation_energy_per_atom, density, total_magnetization).
+similarity:
+  min_edge_weight: 0.7

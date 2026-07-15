@@ -1,0 +1,15 @@
+{
+  "Li": {"name": "Lithium", "atomic_number": 3, "group": 1, "period": 2, "electronegativity": 0.98, "covalent_radius_pm": 128, "category": "alkali_metal"},
+  "N":  {"name": "Nitrogen", "atomic_number": 7, "group": 15, "period": 2, "electronegativity": 3.04, "covalent_radius_pm": 71, "category": "reactive_nonmetal"},
+  "O":  {"name": "Oxygen", "atomic_number": 8, "group": 16, "period": 2, "electronegativity": 3.44, "covalent_radius_pm": 66, "category": "reactive_nonmetal"},
+  "Si": {"name": "Silicon", "atomic_number": 14, "group": 14, "period": 3, "electronegativity": 1.90, "covalent_radius_pm": 111, "category": "metalloid"},
+  "P":  {"name": "Phosphorus", "atomic_number": 15, "group": 15, "period": 3, "electronegativity": 2.19, "covalent_radius_pm": 107, "category": "reactive_nonmetal"},
+  "Ti": {"name": "Titanium", "atomic_number": 22, "group": 4, "period": 4, "electronegativity": 1.54, "covalent_radius_pm": 160, "category": "transition_metal"},
+  "Mn": {"name": "Manganese", "atomic_number": 25, "group": 7, "period": 4, "electronegativity": 1.55, "covalent_radius_pm": 139, "category": "transition_metal"},
+  "Fe": {"name": "Iron", "atomic_number": 26, "group": 8, "period": 4, "electronegativity": 1.83, "covalent_radius_pm": 132, "category": "transition_metal"},
+  "Co": {"name": "Cobalt", "atomic_number": 27, "group": 9, "period": 4, "electronegativity": 1.88, "covalent_radius_pm": 126, "category": "transition_metal"},
+  "Zn": {"name": "Zinc", "atomic_number": 30, "group": 12, "period": 4, "electronegativity": 1.65, "covalent_radius_pm": 122, "category": "transition_metal"},
+  "Ga": {"name": "Gallium", "atomic_number": 31, "group": 13, "period": 4, "electronegativity": 1.81, "covalent_radius_pm": 122, "category": "post_transition_metal"},
+  "As": {"name": "Arsenic", "atomic_number": 33, "group": 15, "period": 4, "electronegativity": 2.18, "covalent_radius_pm": 119, "category": "metalloid"},
+  "Ba": {"name": "Barium", "atomic_number": 56, "group": 2, "period": 6, "electronegativity": 0.89, "covalent_radius_pm": 196, "category": "alkaline_earth_metal"}
+}
