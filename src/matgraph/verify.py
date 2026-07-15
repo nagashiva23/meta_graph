@@ -131,6 +131,42 @@ async def verify() -> None:
         for domain, count in sorted(by_domain.items(), key=lambda kv: -kv[1]):
             print(f"  {domain:22s} {count}")
 
+        print("\n== Formula patterns (formula_anonymous groupings) ==")
+        by_pattern: dict[str, list[str]] = defaultdict(list)
+        no_pattern = 0
+        for formula, (nid, _) in sorted(materials.items()):
+            targets = g.targets(nid, "has_formula_pattern")
+            if targets:
+                by_pattern[targets[0][1]["pattern"]].append(formula)
+            else:
+                no_pattern += 1
+        top_patterns = sorted(by_pattern.items(), key=lambda kv: -len(kv[1]))
+        print(f"  {len(by_pattern)} distinct patterns across {len(materials)} materials")
+        for pattern, formulas in top_patterns[:sample_cap]:
+            sample = formulas[:5]
+            more = f" ... +{len(formulas) - 5} more" if len(formulas) > 5 else ""
+            print(f"    {pattern:10s} ({len(formulas)}): {sample}{more}")
+        if no_pattern:
+            print(f"  ({no_pattern} materials with no formula_anonymous)")
+
+        print("\n== Oxidation states (possible_species groupings) ==")
+        by_species: dict[str, int] = defaultdict(int)
+        for _, (nid, _) in materials.items():
+            for _, dp in g.targets(nid, "has_oxidation_state"):
+                by_species[dp["species"]] += 1
+        top_species = sorted(by_species.items(), key=lambda kv: -kv[1])
+        print(f"  {len(by_species)} distinct oxidation states across the graph")
+        for species, count in top_species[:sample_cap]:
+            print(f"    {species:8s} appears in {count} materials")
+
+        print("\n== Elastic / dielectric coverage ==")
+        has_elastic = sum(1 for _, p in materials.values() if p.get("bulk_modulus_vrh") is not None)
+        has_dielectric = sum(1 for _, p in materials.values() if p.get("dielectric_total") is not None)
+        has_species_data = sum(1 for _, (nid, _) in materials.items() if g.targets(nid, "has_oxidation_state"))
+        print(f"  bulk_modulus_vrh present:  {has_elastic}/{len(materials)}")
+        print(f"  dielectric_total present:  {has_dielectric}/{len(materials)}")
+        print(f"  oxidation states present:  {has_species_data}/{len(materials)}")
+
         print("\n== similar_to edges (sample, sorted by weight) ==")
         seen = set()
         rows = []
