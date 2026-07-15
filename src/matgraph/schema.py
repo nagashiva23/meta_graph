@@ -53,11 +53,11 @@ class PropertyClass(DataPoint):
     """A categorical bucket a material can be classified into.
 
     kind distinguishes independent bucket families (band_gap, stability,
-    magnetic_ordering, density, formation_energy) so e.g. "stable" (stability)
-    and "wide_gap" (band_gap) are both reachable without collision.
+    magnetic_ordering) so e.g. "stable" (stability) and "wide_gap" (band_gap)
+    are both reachable without collision.
     """
 
-    kind: str  # "band_gap" | "stability" | "magnetic_ordering" | "density" | "formation_energy"
+    kind: str  # "band_gap" | "stability" | "magnetic_ordering"
     name: str  # e.g. "wide_gap", "stable", "AFM"
     description: str
     metadata: dict = {
@@ -70,18 +70,6 @@ class ApplicationDomain(DataPoint):
     name: str  # e.g. "battery_cathode"
     description: str
     metadata: dict = {"index_fields": ["description"], "identity_fields": ["name"]}
-
-
-class StructureType(DataPoint):
-    """Structural prototype/motif (e.g. "Spinel", "Perovskite", "Wurtzite",
-    "Corundum", "Olivine"), extracted from the robocrystallographer
-    description. Distinct from CrystalSystem/SpaceGroup: those are symmetry
-    classifications, this is the named structural family materials scientists
-    actually group compounds by.
-    """
-
-    name: str
-    metadata: dict = {"index_fields": ["name"], "identity_fields": ["name"]}
 
 
 class Material(DataPoint):
@@ -111,7 +99,6 @@ class Material(DataPoint):
     classified_as: SkipValidation[Any] = None  # (Edge, list[PropertyClass])
     suitable_for: SkipValidation[Any] = None  # (Edge, list[ApplicationDomain])
     similar_to: SkipValidation[Any] = None  # (Edge, list[Material])
-    has_structure_type: SkipValidation[Any] = None  # (Edge, StructureType)
 
     metadata: dict = {
         "index_fields": ["formula", "description"],

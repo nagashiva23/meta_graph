@@ -47,31 +47,6 @@ stability_buckets:
   - name: unstable
     min: 0.05
 
-# Density buckets (g/cm^3). Rough domain-informed cutoffs; revisit once the
-# dataset grows past the current 10-material seed set.
-density_buckets:
-  - name: low_density
-    max: 3.0
-  - name: medium_density
-    min: 3.0
-    max: 6.0
-  - name: high_density
-    min: 6.0
-
-# Formation energy per atom buckets (eV/atom). More negative = more tightly
-# bound relative to the elemental references (which sit at 0 by convention).
-formation_energy_buckets:
-  - name: strongly_bound
-    max: -3.0
-  - name: moderately_bound
-    min: -3.0
-    max: -1.0
-  - name: weakly_bound
-    min: -1.0
-    max: 0.0
-  - name: unbound_or_elemental
-    min: 0.0
-
 # Application domain rules, evaluated in order; a material can match several.
 # Each fired rule is stored on the `suitable_for` edge for explainability.
 application_rules:

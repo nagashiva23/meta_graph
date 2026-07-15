@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import math
-import re
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +24,6 @@ from matgraph.schema import (
     Material,
     PropertyClass,
     SpaceGroup,
-    StructureType,
 )
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -97,54 +95,6 @@ def classify_ordering(ordering: str) -> dict[str, Any] | None:
         "name": ordering,
         "description": f"magnetic ordering reported by Materials Project as '{ordering}'",
     }
-
-
-def classify_density(density: float, config: dict[str, Any]) -> dict[str, Any]:
-    bucket = _bucket(density, config["density_buckets"])
-    return {
-        "kind": "density",
-        "name": bucket["name"],
-        "description": f"density classified as '{bucket['name']}' (value={density:.3f} g/cm^3)",
-    }
-
-
-def classify_formation_energy(value: float, config: dict[str, Any]) -> dict[str, Any]:
-    bucket = _bucket(value, config["formation_energy_buckets"])
-    return {
-        "kind": "formation_energy",
-        "name": bucket["name"],
-        "description": (
-            f"formation_energy_per_atom classified as '{bucket['name']}' (value={value:.3f} eV/atom)"
-        ),
-    }
-
-
-# --- structure type extraction ---------------------------------------------
-
-_STRUCTURE_TYPE_RE = re.compile(r"^\S+\s+is\s+(.+?)\s+structured\b", re.IGNORECASE)
-_LEADING_PAREN_RE = re.compile(r"^\(([^)]+)\)\s*(.+)$")
-
-
-def extract_structure_type(description: str) -> str | None:
-    """Best-effort parse of the structural prototype from a robocrys description.
-
-    Robocrys descriptions consistently open with a sentence of the form
-    "<Formula> is <StructureName> structured and crystallizes in the ...".
-    Returns None (rather than raising) when the description doesn't follow
-    this pattern, since the field is descriptive text, not a guaranteed schema.
-    """
-    if not description:
-        return None
-    match = _STRUCTURE_TYPE_RE.match(description.strip())
-    if not match:
-        return None
-    name = match.group(1).strip()
-    # "(Cubic) Perovskite" -> "Perovskite" (Cubic) — the symmetry qualifier
-    # is already captured separately via CrystalSystem/SpaceGroup.
-    paren_match = _LEADING_PAREN_RE.match(name)
-    if paren_match:
-        name = paren_match.group(2).strip()
-    return name or None
 
 
 # --- application domain rules --------------------------------------------
@@ -249,7 +199,6 @@ def build_graph(
     chemsys_cache: dict[str, ChemicalSystem] = {}
     property_class_cache: dict[tuple[str, str], PropertyClass] = {}
     domain_cache: dict[str, ApplicationDomain] = {}
-    structure_type_cache: dict[str, StructureType] = {}
 
     def get_element(symbol: str) -> Element:
         if symbol not in element_cache:
@@ -300,11 +249,6 @@ def build_graph(
             )
         return domain_cache[name]
 
-    def get_structure_type(name: str) -> StructureType:
-        if name not in structure_type_cache:
-            structure_type_cache[name] = StructureType(name=name)
-        return structure_type_cache[name]
-
     similarity_edges = compute_similarity_edges(
         raw_materials, config["similarity"]["min_edge_weight"]
     )
@@ -321,8 +265,6 @@ def build_graph(
         classifications = [
             classify_band_gap(raw["band_gap"], config),
             classify_stability(raw["energy_above_hull"], config),
-            classify_density(raw["density"], config),
-            classify_formation_energy(raw["formation_energy_per_atom"], config),
         ]
         ordering_class = classify_ordering(raw["ordering"])
         if ordering_class:
@@ -336,13 +278,6 @@ def build_graph(
             (Edge(relationship_type="suitable_for", properties={"rule": rule}), get_domain(name))
             for name, rule in domain_matches
         ]
-
-        structure_type_name = extract_structure_type(raw["description"])
-        has_structure_type = (
-            (Edge(relationship_type="has_structure_type"), get_structure_type(structure_type_name))
-            if structure_type_name
-            else None
-        )
 
         material_nodes[raw["material_id"]] = Material(
             material_id=raw["material_id"],
@@ -365,7 +300,6 @@ def build_graph(
             member_of=(Edge(relationship_type="member_of"), chemsys),
             classified_as=classified_as,
             suitable_for=suitable_for,
-            has_structure_type=has_structure_type,
             # similar_to filled in below, once every Material node exists.
         )
 
