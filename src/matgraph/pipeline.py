@@ -8,6 +8,7 @@ happens anywhere in the graph-construction path.
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,12 @@ def build_materials(_: list[Any]) -> list[Material]:
 
 async def run(reset: bool = True) -> None:
     """Build the knowledge graph and write it into cognee's stores."""
+    # Cognee's internal provenance stamping walks the DataPoint graph
+    # recursively with no depth cap. At hundreds of materials cross-linked via
+    # similar_to (each with several neighbours, each of those with their own),
+    # that DFS comfortably exceeds Python's default 1000-frame limit.
+    sys.setrecursionlimit(20000)
+
     config.system_root_directory(str(COGNEE_SYSTEM_DIR))
 
     if reset:
