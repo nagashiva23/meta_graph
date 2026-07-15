@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.claude/settings.local.json
+.venv/
+__pycache__/
+*.pyc
+.cognee_system/
+.cognee_data/
+data/raw/
+artifacts/*.html
+*.egg-info/
+.pytest_cache/
