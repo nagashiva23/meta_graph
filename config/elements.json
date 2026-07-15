@@ -1,15 +1,929 @@
 {
-  "Li": {"name": "Lithium", "atomic_number": 3, "group": 1, "period": 2, "electronegativity": 0.98, "covalent_radius_pm": 128, "category": "alkali_metal"},
-  "N":  {"name": "Nitrogen", "atomic_number": 7, "group": 15, "period": 2, "electronegativity": 3.04, "covalent_radius_pm": 71, "category": "reactive_nonmetal"},
-  "O":  {"name": "Oxygen", "atomic_number": 8, "group": 16, "period": 2, "electronegativity": 3.44, "covalent_radius_pm": 66, "category": "reactive_nonmetal"},
-  "Si": {"name": "Silicon", "atomic_number": 14, "group": 14, "period": 3, "electronegativity": 1.90, "covalent_radius_pm": 111, "category": "metalloid"},
-  "P":  {"name": "Phosphorus", "atomic_number": 15, "group": 15, "period": 3, "electronegativity": 2.19, "covalent_radius_pm": 107, "category": "reactive_nonmetal"},
-  "Ti": {"name": "Titanium", "atomic_number": 22, "group": 4, "period": 4, "electronegativity": 1.54, "covalent_radius_pm": 160, "category": "transition_metal"},
-  "Mn": {"name": "Manganese", "atomic_number": 25, "group": 7, "period": 4, "electronegativity": 1.55, "covalent_radius_pm": 139, "category": "transition_metal"},
-  "Fe": {"name": "Iron", "atomic_number": 26, "group": 8, "period": 4, "electronegativity": 1.83, "covalent_radius_pm": 132, "category": "transition_metal"},
-  "Co": {"name": "Cobalt", "atomic_number": 27, "group": 9, "period": 4, "electronegativity": 1.88, "covalent_radius_pm": 126, "category": "transition_metal"},
-  "Zn": {"name": "Zinc", "atomic_number": 30, "group": 12, "period": 4, "electronegativity": 1.65, "covalent_radius_pm": 122, "category": "transition_metal"},
-  "Ga": {"name": "Gallium", "atomic_number": 31, "group": 13, "period": 4, "electronegativity": 1.81, "covalent_radius_pm": 122, "category": "post_transition_metal"},
-  "As": {"name": "Arsenic", "atomic_number": 33, "group": 15, "period": 4, "electronegativity": 2.18, "covalent_radius_pm": 119, "category": "metalloid"},
-  "Ba": {"name": "Barium", "atomic_number": 56, "group": 2, "period": 6, "electronegativity": 0.89, "covalent_radius_pm": 196, "category": "alkaline_earth_metal"}
+  "Ac": {
+    "atomic_number": 89,
+    "category": "actinide",
+    "covalent_radius_pm": 195.0,
+    "electronegativity": 1.1,
+    "group": 3,
+    "name": "Actinium",
+    "period": 7
+  },
+  "Ag": {
+    "atomic_number": 47,
+    "category": "transition_metal",
+    "covalent_radius_pm": 160.0,
+    "electronegativity": 1.93,
+    "group": 11,
+    "name": "Silver",
+    "period": 5
+  },
+  "Al": {
+    "atomic_number": 13,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 125.0,
+    "electronegativity": 1.61,
+    "group": 13,
+    "name": "Aluminum",
+    "period": 3
+  },
+  "Am": {
+    "atomic_number": 95,
+    "category": "actinide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Americium",
+    "period": 7
+  },
+  "Ar": {
+    "atomic_number": 18,
+    "category": "noble_gas",
+    "covalent_radius_pm": 71.0,
+    "electronegativity": 0.0,
+    "group": 18,
+    "name": "Argon",
+    "period": 3
+  },
+  "As": {
+    "atomic_number": 33,
+    "category": "metalloid",
+    "covalent_radius_pm": 115.0,
+    "electronegativity": 2.18,
+    "group": 15,
+    "name": "Arsenic",
+    "period": 4
+  },
+  "At": {
+    "atomic_number": 85,
+    "category": "halogen",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 2.2,
+    "group": 17,
+    "name": "Astatine",
+    "period": 6
+  },
+  "Au": {
+    "atomic_number": 79,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 2.54,
+    "group": 11,
+    "name": "Gold",
+    "period": 6
+  },
+  "B": {
+    "atomic_number": 5,
+    "category": "metalloid",
+    "covalent_radius_pm": 85.0,
+    "electronegativity": 2.04,
+    "group": 13,
+    "name": "Boron",
+    "period": 2
+  },
+  "Ba": {
+    "atomic_number": 56,
+    "category": "alkaline_earth_metal",
+    "covalent_radius_pm": 215.0,
+    "electronegativity": 0.89,
+    "group": 2,
+    "name": "Barium",
+    "period": 6
+  },
+  "Be": {
+    "atomic_number": 4,
+    "category": "alkaline_earth_metal",
+    "covalent_radius_pm": 105.0,
+    "electronegativity": 1.57,
+    "group": 2,
+    "name": "Beryllium",
+    "period": 2
+  },
+  "Bi": {
+    "atomic_number": 83,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 160.0,
+    "electronegativity": 2.02,
+    "group": 15,
+    "name": "Bismuth",
+    "period": 6
+  },
+  "Bk": {
+    "atomic_number": 97,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Berkelium",
+    "period": 7
+  },
+  "Br": {
+    "atomic_number": 35,
+    "category": "halogen",
+    "covalent_radius_pm": 115.0,
+    "electronegativity": 2.96,
+    "group": 17,
+    "name": "Bromine",
+    "period": 4
+  },
+  "C": {
+    "atomic_number": 6,
+    "category": "nonmetal",
+    "covalent_radius_pm": 70.0,
+    "electronegativity": 2.55,
+    "group": 14,
+    "name": "Carbon",
+    "period": 2
+  },
+  "Ca": {
+    "atomic_number": 20,
+    "category": "alkaline_earth_metal",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 1.0,
+    "group": 2,
+    "name": "Calcium",
+    "period": 4
+  },
+  "Cd": {
+    "atomic_number": 48,
+    "category": "transition_metal",
+    "covalent_radius_pm": 155.0,
+    "electronegativity": 1.69,
+    "group": 12,
+    "name": "Cadmium",
+    "period": 5
+  },
+  "Ce": {
+    "atomic_number": 58,
+    "category": "lanthanide",
+    "covalent_radius_pm": 185.0,
+    "electronegativity": 1.12,
+    "group": 3,
+    "name": "Cerium",
+    "period": 6
+  },
+  "Cf": {
+    "atomic_number": 98,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Californium",
+    "period": 7
+  },
+  "Cl": {
+    "atomic_number": 17,
+    "category": "halogen",
+    "covalent_radius_pm": 100.0,
+    "electronegativity": 3.16,
+    "group": 17,
+    "name": "Chlorine",
+    "period": 3
+  },
+  "Cm": {
+    "atomic_number": 96,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Curium",
+    "period": 7
+  },
+  "Co": {
+    "atomic_number": 27,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.88,
+    "group": 9,
+    "name": "Cobalt",
+    "period": 4
+  },
+  "Cr": {
+    "atomic_number": 24,
+    "category": "transition_metal",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 1.66,
+    "group": 6,
+    "name": "Chromium",
+    "period": 4
+  },
+  "Cs": {
+    "atomic_number": 55,
+    "category": "alkali_metal",
+    "covalent_radius_pm": 260.0,
+    "electronegativity": 0.79,
+    "group": 1,
+    "name": "Cesium",
+    "period": 6
+  },
+  "Cu": {
+    "atomic_number": 29,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.9,
+    "group": 11,
+    "name": "Copper",
+    "period": 4
+  },
+  "Dy": {
+    "atomic_number": 66,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.22,
+    "group": 3,
+    "name": "Dysprosium",
+    "period": 6
+  },
+  "Er": {
+    "atomic_number": 68,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.24,
+    "group": 3,
+    "name": "Erbium",
+    "period": 6
+  },
+  "Es": {
+    "atomic_number": 99,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Einsteinium",
+    "period": 7
+  },
+  "Eu": {
+    "atomic_number": 63,
+    "category": "lanthanide",
+    "covalent_radius_pm": 185.0,
+    "electronegativity": 1.2,
+    "group": 3,
+    "name": "Europium",
+    "period": 6
+  },
+  "F": {
+    "atomic_number": 9,
+    "category": "halogen",
+    "covalent_radius_pm": 50.0,
+    "electronegativity": 3.98,
+    "group": 17,
+    "name": "Fluorine",
+    "period": 2
+  },
+  "Fe": {
+    "atomic_number": 26,
+    "category": "transition_metal",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 1.83,
+    "group": 8,
+    "name": "Iron",
+    "period": 4
+  },
+  "Fm": {
+    "atomic_number": 100,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Fermium",
+    "period": 7
+  },
+  "Fr": {
+    "atomic_number": 87,
+    "category": "alkali_metal",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 0.7,
+    "group": 1,
+    "name": "Francium",
+    "period": 7
+  },
+  "Ga": {
+    "atomic_number": 31,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 130.0,
+    "electronegativity": 1.81,
+    "group": 13,
+    "name": "Gallium",
+    "period": 4
+  },
+  "Gd": {
+    "atomic_number": 64,
+    "category": "lanthanide",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 1.2,
+    "group": 3,
+    "name": "Gadolinium",
+    "period": 6
+  },
+  "Ge": {
+    "atomic_number": 32,
+    "category": "metalloid",
+    "covalent_radius_pm": 125.0,
+    "electronegativity": 2.01,
+    "group": 14,
+    "name": "Germanium",
+    "period": 4
+  },
+  "H": {
+    "atomic_number": 1,
+    "category": "nonmetal",
+    "covalent_radius_pm": 25.0,
+    "electronegativity": 2.2,
+    "group": 1,
+    "name": "Hydrogen",
+    "period": 1
+  },
+  "He": {
+    "atomic_number": 2,
+    "category": "noble_gas",
+    "covalent_radius_pm": 31.0,
+    "electronegativity": 0.0,
+    "group": 18,
+    "name": "Helium",
+    "period": 1
+  },
+  "Hf": {
+    "atomic_number": 72,
+    "category": "transition_metal",
+    "covalent_radius_pm": 155.0,
+    "electronegativity": 1.3,
+    "group": 4,
+    "name": "Hafnium",
+    "period": 6
+  },
+  "Hg": {
+    "atomic_number": 80,
+    "category": "transition_metal",
+    "covalent_radius_pm": 150.0,
+    "electronegativity": 2.0,
+    "group": 12,
+    "name": "Mercury",
+    "period": 6
+  },
+  "Ho": {
+    "atomic_number": 67,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.23,
+    "group": 3,
+    "name": "Holmium",
+    "period": 6
+  },
+  "I": {
+    "atomic_number": 53,
+    "category": "halogen",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 2.66,
+    "group": 17,
+    "name": "Iodine",
+    "period": 5
+  },
+  "In": {
+    "atomic_number": 49,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 155.0,
+    "electronegativity": 1.78,
+    "group": 13,
+    "name": "Indium",
+    "period": 5
+  },
+  "Ir": {
+    "atomic_number": 77,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 2.2,
+    "group": 9,
+    "name": "Iridium",
+    "period": 6
+  },
+  "K": {
+    "atomic_number": 19,
+    "category": "alkali_metal",
+    "covalent_radius_pm": 220.0,
+    "electronegativity": 0.82,
+    "group": 1,
+    "name": "Potassium",
+    "period": 4
+  },
+  "Kr": {
+    "atomic_number": 36,
+    "category": "noble_gas",
+    "covalent_radius_pm": 88.0,
+    "electronegativity": 3.0,
+    "group": 18,
+    "name": "Krypton",
+    "period": 4
+  },
+  "La": {
+    "atomic_number": 57,
+    "category": "lanthanide",
+    "covalent_radius_pm": 195.0,
+    "electronegativity": 1.1,
+    "group": 3,
+    "name": "Lanthanum",
+    "period": 6
+  },
+  "Li": {
+    "atomic_number": 3,
+    "category": "alkali_metal",
+    "covalent_radius_pm": 145.0,
+    "electronegativity": 0.98,
+    "group": 1,
+    "name": "Lithium",
+    "period": 2
+  },
+  "Lr": {
+    "atomic_number": 103,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Lawrencium",
+    "period": 7
+  },
+  "Lu": {
+    "atomic_number": 71,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.27,
+    "group": 3,
+    "name": "Lutetium",
+    "period": 6
+  },
+  "Md": {
+    "atomic_number": 101,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Mendelevium",
+    "period": 7
+  },
+  "Mg": {
+    "atomic_number": 12,
+    "category": "alkaline_earth_metal",
+    "covalent_radius_pm": 150.0,
+    "electronegativity": 1.31,
+    "group": 2,
+    "name": "Magnesium",
+    "period": 3
+  },
+  "Mn": {
+    "atomic_number": 25,
+    "category": "transition_metal",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 1.55,
+    "group": 7,
+    "name": "Manganese",
+    "period": 4
+  },
+  "Mo": {
+    "atomic_number": 42,
+    "category": "transition_metal",
+    "covalent_radius_pm": 145.0,
+    "electronegativity": 2.16,
+    "group": 6,
+    "name": "Molybdenum",
+    "period": 5
+  },
+  "N": {
+    "atomic_number": 7,
+    "category": "nonmetal",
+    "covalent_radius_pm": 65.0,
+    "electronegativity": 3.04,
+    "group": 15,
+    "name": "Nitrogen",
+    "period": 2
+  },
+  "Na": {
+    "atomic_number": 11,
+    "category": "alkali_metal",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 0.93,
+    "group": 1,
+    "name": "Sodium",
+    "period": 3
+  },
+  "Nb": {
+    "atomic_number": 41,
+    "category": "transition_metal",
+    "covalent_radius_pm": 145.0,
+    "electronegativity": 1.6,
+    "group": 5,
+    "name": "Niobium",
+    "period": 5
+  },
+  "Nd": {
+    "atomic_number": 60,
+    "category": "lanthanide",
+    "covalent_radius_pm": 185.0,
+    "electronegativity": 1.14,
+    "group": 3,
+    "name": "Neodymium",
+    "period": 6
+  },
+  "Ne": {
+    "atomic_number": 10,
+    "category": "noble_gas",
+    "covalent_radius_pm": 38.0,
+    "electronegativity": 0.0,
+    "group": 18,
+    "name": "Neon",
+    "period": 2
+  },
+  "Ni": {
+    "atomic_number": 28,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.91,
+    "group": 10,
+    "name": "Nickel",
+    "period": 4
+  },
+  "No": {
+    "atomic_number": 102,
+    "category": "actinide",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Nobelium",
+    "period": 7
+  },
+  "Np": {
+    "atomic_number": 93,
+    "category": "actinide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.36,
+    "group": 3,
+    "name": "Neptunium",
+    "period": 7
+  },
+  "O": {
+    "atomic_number": 8,
+    "category": "chalcogen",
+    "covalent_radius_pm": 60.0,
+    "electronegativity": 3.44,
+    "group": 16,
+    "name": "Oxygen",
+    "period": 2
+  },
+  "Os": {
+    "atomic_number": 76,
+    "category": "transition_metal",
+    "covalent_radius_pm": 130.0,
+    "electronegativity": 2.2,
+    "group": 8,
+    "name": "Osmium",
+    "period": 6
+  },
+  "P": {
+    "atomic_number": 15,
+    "category": "nonmetal",
+    "covalent_radius_pm": 100.0,
+    "electronegativity": 2.19,
+    "group": 15,
+    "name": "Phosphorus",
+    "period": 3
+  },
+  "Pa": {
+    "atomic_number": 91,
+    "category": "actinide",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 1.5,
+    "group": 3,
+    "name": "Protactinium",
+    "period": 7
+  },
+  "Pb": {
+    "atomic_number": 82,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 2.33,
+    "group": 14,
+    "name": "Lead",
+    "period": 6
+  },
+  "Pd": {
+    "atomic_number": 46,
+    "category": "transition_metal",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 2.2,
+    "group": 10,
+    "name": "Palladium",
+    "period": 5
+  },
+  "Pm": {
+    "atomic_number": 61,
+    "category": "lanthanide",
+    "covalent_radius_pm": 185.0,
+    "electronegativity": 1.13,
+    "group": 3,
+    "name": "Promethium",
+    "period": 6
+  },
+  "Po": {
+    "atomic_number": 84,
+    "category": "chalcogen",
+    "covalent_radius_pm": 190.0,
+    "electronegativity": 2.0,
+    "group": 16,
+    "name": "Polonium",
+    "period": 6
+  },
+  "Pr": {
+    "atomic_number": 59,
+    "category": "lanthanide",
+    "covalent_radius_pm": 185.0,
+    "electronegativity": 1.13,
+    "group": 3,
+    "name": "Praseodymium",
+    "period": 6
+  },
+  "Pt": {
+    "atomic_number": 78,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 2.28,
+    "group": 10,
+    "name": "Platinum",
+    "period": 6
+  },
+  "Pu": {
+    "atomic_number": 94,
+    "category": "actinide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.28,
+    "group": 3,
+    "name": "Plutonium",
+    "period": 7
+  },
+  "Ra": {
+    "atomic_number": 88,
+    "category": "alkaline_earth_metal",
+    "covalent_radius_pm": 215.0,
+    "electronegativity": 0.9,
+    "group": 2,
+    "name": "Radium",
+    "period": 7
+  },
+  "Rb": {
+    "atomic_number": 37,
+    "category": "alkali_metal",
+    "covalent_radius_pm": 235.0,
+    "electronegativity": 0.82,
+    "group": 1,
+    "name": "Rubidium",
+    "period": 5
+  },
+  "Re": {
+    "atomic_number": 75,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.9,
+    "group": 7,
+    "name": "Rhenium",
+    "period": 6
+  },
+  "Rh": {
+    "atomic_number": 45,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 2.28,
+    "group": 9,
+    "name": "Rhodium",
+    "period": 5
+  },
+  "Rn": {
+    "atomic_number": 86,
+    "category": "noble_gas",
+    "covalent_radius_pm": 120.0,
+    "electronegativity": 2.2,
+    "group": 18,
+    "name": "Radon",
+    "period": 6
+  },
+  "Ru": {
+    "atomic_number": 44,
+    "category": "transition_metal",
+    "covalent_radius_pm": 130.0,
+    "electronegativity": 2.2,
+    "group": 8,
+    "name": "Ruthenium",
+    "period": 5
+  },
+  "S": {
+    "atomic_number": 16,
+    "category": "chalcogen",
+    "covalent_radius_pm": 100.0,
+    "electronegativity": 2.58,
+    "group": 16,
+    "name": "Sulfur",
+    "period": 3
+  },
+  "Sb": {
+    "atomic_number": 51,
+    "category": "metalloid",
+    "covalent_radius_pm": 145.0,
+    "electronegativity": 2.05,
+    "group": 15,
+    "name": "Antimony",
+    "period": 5
+  },
+  "Sc": {
+    "atomic_number": 21,
+    "category": "transition_metal",
+    "covalent_radius_pm": 160.0,
+    "electronegativity": 1.36,
+    "group": 3,
+    "name": "Scandium",
+    "period": 4
+  },
+  "Se": {
+    "atomic_number": 34,
+    "category": "chalcogen",
+    "covalent_radius_pm": 115.0,
+    "electronegativity": 2.55,
+    "group": 16,
+    "name": "Selenium",
+    "period": 4
+  },
+  "Si": {
+    "atomic_number": 14,
+    "category": "metalloid",
+    "covalent_radius_pm": 110.0,
+    "electronegativity": 1.9,
+    "group": 14,
+    "name": "Silicon",
+    "period": 3
+  },
+  "Sm": {
+    "atomic_number": 62,
+    "category": "lanthanide",
+    "covalent_radius_pm": 185.0,
+    "electronegativity": 1.17,
+    "group": 3,
+    "name": "Samarium",
+    "period": 6
+  },
+  "Sn": {
+    "atomic_number": 50,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 145.0,
+    "electronegativity": 1.96,
+    "group": 14,
+    "name": "Tin",
+    "period": 5
+  },
+  "Sr": {
+    "atomic_number": 38,
+    "category": "alkaline_earth_metal",
+    "covalent_radius_pm": 200.0,
+    "electronegativity": 0.95,
+    "group": 2,
+    "name": "Strontium",
+    "period": 5
+  },
+  "Ta": {
+    "atomic_number": 73,
+    "category": "transition_metal",
+    "covalent_radius_pm": 145.0,
+    "electronegativity": 1.5,
+    "group": 5,
+    "name": "Tantalum",
+    "period": 6
+  },
+  "Tb": {
+    "atomic_number": 65,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.1,
+    "group": 3,
+    "name": "Terbium",
+    "period": 6
+  },
+  "Tc": {
+    "atomic_number": 43,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.9,
+    "group": 7,
+    "name": "Technetium",
+    "period": 5
+  },
+  "Te": {
+    "atomic_number": 52,
+    "category": "chalcogen",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 2.1,
+    "group": 16,
+    "name": "Tellurium",
+    "period": 5
+  },
+  "Th": {
+    "atomic_number": 90,
+    "category": "actinide",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 1.3,
+    "group": 3,
+    "name": "Thorium",
+    "period": 7
+  },
+  "Ti": {
+    "atomic_number": 22,
+    "category": "transition_metal",
+    "covalent_radius_pm": 140.0,
+    "electronegativity": 1.54,
+    "group": 4,
+    "name": "Titanium",
+    "period": 4
+  },
+  "Tl": {
+    "atomic_number": 81,
+    "category": "post_transition_metal",
+    "covalent_radius_pm": 190.0,
+    "electronegativity": 1.62,
+    "group": 13,
+    "name": "Thallium",
+    "period": 6
+  },
+  "Tm": {
+    "atomic_number": 69,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.25,
+    "group": 3,
+    "name": "Thulium",
+    "period": 6
+  },
+  "U": {
+    "atomic_number": 92,
+    "category": "actinide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.38,
+    "group": 3,
+    "name": "Uranium",
+    "period": 7
+  },
+  "V": {
+    "atomic_number": 23,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.63,
+    "group": 5,
+    "name": "Vanadium",
+    "period": 4
+  },
+  "W": {
+    "atomic_number": 74,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 2.36,
+    "group": 6,
+    "name": "Tungsten",
+    "period": 6
+  },
+  "Xe": {
+    "atomic_number": 54,
+    "category": "noble_gas",
+    "covalent_radius_pm": 108.0,
+    "electronegativity": 2.6,
+    "group": 18,
+    "name": "Xenon",
+    "period": 5
+  },
+  "Y": {
+    "atomic_number": 39,
+    "category": "transition_metal",
+    "covalent_radius_pm": 180.0,
+    "electronegativity": 1.22,
+    "group": 3,
+    "name": "Yttrium",
+    "period": 5
+  },
+  "Yb": {
+    "atomic_number": 70,
+    "category": "lanthanide",
+    "covalent_radius_pm": 175.0,
+    "electronegativity": 1.1,
+    "group": 3,
+    "name": "Ytterbium",
+    "period": 6
+  },
+  "Zn": {
+    "atomic_number": 30,
+    "category": "transition_metal",
+    "covalent_radius_pm": 135.0,
+    "electronegativity": 1.65,
+    "group": 12,
+    "name": "Zinc",
+    "period": 4
+  },
+  "Zr": {
+    "atomic_number": 40,
+    "category": "transition_metal",
+    "covalent_radius_pm": 155.0,
+    "electronegativity": 1.33,
+    "group": 4,
+    "name": "Zirconium",
+    "period": 5
+  }
 }
