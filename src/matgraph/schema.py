@@ -5,9 +5,9 @@ for filtering/comparison); anything used for grouping or traversal becomes a
 node; derived similarity becomes a weighted edge.
 
 Every node type that multiple materials can share (Element, CrystalSystem,
-SpaceGroup, ChemicalSystem, PropertyClass, ApplicationDomain) declares
-``identity_fields`` so repeated runs and repeated references deduplicate onto
-the same graph node instead of creating copies.
+SpaceGroup, ChemicalSystem, PropertyClass, ApplicationDomain, OxidationState,
+FormulaPattern) declares ``identity_fields`` so repeated runs and repeated
+references deduplicate onto the same graph node instead of creating copies.
 """
 
 from __future__ import annotations
@@ -72,6 +72,27 @@ class ApplicationDomain(DataPoint):
     metadata: dict = {"index_fields": ["description"], "identity_fields": ["name"]}
 
 
+class OxidationState(DataPoint):
+    """An ionic species (e.g. "Fe2+", "O2-"). Shared across every material that
+    contains it, so materials with the same oxidation state of an element
+    become connected - this is also the anchor Phase 3's ionic-substitution
+    model will reason over.
+    """
+
+    species: str  # e.g. "Fe2+"
+    metadata: dict = {"index_fields": ["species"], "identity_fields": ["species"]}
+
+
+class FormulaPattern(DataPoint):
+    """Anonymized stoichiometric pattern (e.g. "ABC3" for perovskites, "AB2O4"
+    for spinels), from Materials Project's formula_anonymous. Groups materials
+    by stoichiometric shape independent of actual composition.
+    """
+
+    pattern: str
+    metadata: dict = {"index_fields": ["pattern"], "identity_fields": ["pattern"]}
+
+
 class Material(DataPoint):
     material_id: str
     formula: str
@@ -90,6 +111,26 @@ class Material(DataPoint):
     ordering: str
     theoretical: bool
 
+    # Electronic structure (cheap scalars, always paired with band_gap).
+    cbm: float | None = None
+    vbm: float | None = None
+    efermi: float | None = None
+    is_magnetic: bool = False
+    num_magnetic_sites: int = 0
+
+    # Elastic properties (PRD: "Elastic Properties"). Not computed for every
+    # material - None when Materials Project has no elastic tensor for it.
+    bulk_modulus_vrh: float | None = None
+    shear_modulus_vrh: float | None = None
+    universal_anisotropy: float | None = None
+    homogeneous_poisson: float | None = None
+
+    # Dielectric properties (PRD: "Dielectric Properties"). Also partial coverage.
+    dielectric_total: float | None = None
+    dielectric_electronic: float | None = None
+    dielectric_ionic: float | None = None
+    refractive_index: float | None = None
+
     # These are relationship fields: builders pass a (Edge(...), target(s)) tuple
     # as the value (see build_material in enrich.py). SkipValidation is required
     # because pydantic cannot type-check a tuple-of-(Edge, DataPoint) shape.
@@ -99,6 +140,8 @@ class Material(DataPoint):
     classified_as: SkipValidation[Any] = None  # (Edge, list[PropertyClass])
     suitable_for: SkipValidation[Any] = None  # (Edge, list[ApplicationDomain])
     similar_to: SkipValidation[Any] = None  # (Edge, list[Material])
+    has_oxidation_state: SkipValidation[Any] = None  # (Edge, list[OxidationState])
+    has_formula_pattern: SkipValidation[Any] = None  # (Edge, FormulaPattern)
 
     metadata: dict = {
         "index_fields": ["formula", "description"],
