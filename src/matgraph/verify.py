@@ -108,6 +108,30 @@ async def verify() -> None:
                 if dp["name"] == "battery_cathode":
                     print(f"  {formula}")
 
+        print("\n== Structure type (extracted from robocrys description) ==")
+        by_structure: dict[str, list[str]] = defaultdict(list)
+        missing_structure = []
+        for formula, (nid, _) in sorted(materials.items()):
+            targets = g.targets(nid, "has_structure_type")
+            if targets:
+                by_structure[targets[0][1]["name"]].append(formula)
+            else:
+                missing_structure.append(formula)
+        for name, formulas in sorted(by_structure.items()):
+            print(f"  {name:20s} {formulas}")
+        if missing_structure:
+            print(f"  (no structure type extracted for: {missing_structure})")
+
+        print("\n== Density / formation-energy classes (new bucketed nodes) ==")
+        for formula, (nid, p) in sorted(materials.items()):
+            classes = {(cp["kind"], cp["name"]) for _, cp in g.targets(nid, "classified_as")}
+            density_class = next((n for k, n in classes if k == "density"), "?")
+            fe_class = next((n for k, n in classes if k == "formation_energy"), "?")
+            print(
+                f"  {formula:10s} density={p['density']:.2f} -> {density_class:15s} "
+                f"formation_energy={p['formation_energy_per_atom']:.3f} -> {fe_class}"
+            )
+
         print("\n== similar_to edges (weight >= threshold) ==")
         seen = set()
         rows = []
@@ -135,3 +159,13 @@ async def verify() -> None:
 
         assert len(materials) == 10, f"expected 10 Material nodes, got {len(materials)}"
         print(f"  OK: {len(materials)} Material nodes present.")
+
+        structure_type_count = len(g.nodes_of_type("StructureType"))
+        assert structure_type_count > 0, "expected at least one StructureType node"
+        print(f"  OK: {structure_type_count} StructureType nodes present.")
+
+        property_kinds = {p["kind"] for _, p in g.nodes_of_type("PropertyClass")}
+        expected_kinds = {"band_gap", "stability", "density", "formation_energy"}
+        missing_kinds = expected_kinds - property_kinds
+        assert not missing_kinds, f"missing PropertyClass kinds: {missing_kinds}"
+        print(f"  OK: PropertyClass kinds present: {sorted(property_kinds)}")
