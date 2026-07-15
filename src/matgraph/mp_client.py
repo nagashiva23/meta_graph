@@ -34,6 +34,34 @@ SUMMARY_FIELDS = [
     "ordering",
     "symmetry",
     "theoretical",
+    # Elastic properties (PRD: "Elastic Properties"). Not computed for every
+    # material (~84% coverage observed) - null when unavailable.
+    "bulk_modulus",
+    "shear_modulus",
+    "universal_anisotropy",
+    "homogeneous_poisson",
+    # Dielectric properties (PRD: "Dielectric Properties"). ~70% coverage.
+    "e_total",
+    "e_electronic",
+    "e_ionic",
+    "n",
+    # Electronic structure scalars (cheap, always paired with band_gap).
+    "cbm",
+    "vbm",
+    "efermi",
+    # Magnetic detail beyond total_magnetization/ordering.
+    "is_magnetic",
+    "num_magnetic_sites",
+    # Oxidation states (PRD: "Oxidation States") -> OxidationState nodes.
+    "possible_species",
+    # Anonymized stoichiometric pattern (e.g. "ABC3") -> FormulaPattern nodes.
+    "formula_anonymous",
+    # Full crystal structure: cached to disk for Phase 3's CGCNN, deliberately
+    # NOT added as a Cognee graph node property (see enrich.py) - it's a bulky
+    # nested lattice/coordinates blob, not something an LLM can reason over.
+    # The robocrys description already captures the same structural facts in
+    # embeddable text form.
+    "structure",
 ]
 
 
