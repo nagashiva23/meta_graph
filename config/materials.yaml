@@ -1,27 +1,90 @@
-# Seed set for Phase 1. Chosen so materials interrelate through shared elements,
-# crystal systems, and property classes rather than forming isolated islands.
-# See docs/PHASE1_PLAN.md section 2 for the rationale behind each pick.
-materials:
-  - formula: LiFePO4
-    note: battery cathode (olivine)
-  - formula: LiCoO2
-    note: battery cathode (layered)
-  - formula: LiMn2O4
-    note: battery cathode (spinel)
-  - formula: Si
-    note: elemental semiconductor
-  - formula: GaAs
-    note: III-V semiconductor
-  - formula: GaN
-    note: III-V wide-gap semiconductor
-  - formula: ZnO
-    note: wide-gap oxide semiconductor
-  - formula: TiO2
-    note: photocatalyst oxide
-  - formula: Fe2O3
-    note: magnetic oxide
-  - formula: BaTiO3
-    note: dielectric / ferroelectric perovskite
+# Chemistry-driven material clusters for Phase 1. Each cluster expands to one
+# or more Materials Project queries so materials interrelate through shared
+# elements, crystal systems, and property classes rather than forming
+# isolated islands. Targets ~500-2000 total materials after cross-cluster
+# dedup (see docs/PHASE1_PLAN.md for the original 10-material rationale this
+# generalizes).
+#
+# Query patterns (implemented in mp_client.py):
+#   elements_plus_fixed        - for each element in `vary`, query
+#                                 elements=<fixed + vary_element>, capped at
+#                                 nelements_max total elements.
+#   pairwise_chemsys           - binary compounds: chemsys=<a>-<b> for every
+#                                 (a, b) in group_a x group_b.
+#   pairwise_chemsys_with_suffix - ternary compounds: chemsys=<a>-<b>-<suffix>
+#                                 for every (a, b) in group_a x group_b (a != b).
+#   chemsys_list                - literal chemsys strings, queried together.
+#
+# Every query also applies energy_above_hull_max (stability filter) and
+# exclude_elements (radioactive/synthetic elements dropped globally below),
+# and keeps at most limit_per_query results per sub-query, sorted by
+# energy_above_hull ascending (most stable first).
+clusters:
+  - name: battery_cathode_oxide
+    pattern: elements_plus_fixed
+    fixed: [Li, O]
+    vary: [Fe, Co, Mn, Ni, V, Ti, Cr, Zn, Cu, Sc, Nb, Mo]
+    nelements_max: 3
+    energy_above_hull_max: 0.08
+    limit_per_query: 25
+
+  - name: battery_cathode_phosphate
+    pattern: elements_plus_fixed
+    fixed: [Li, P, O]
+    vary: [Fe, Mn, Co, Ni, V, Ti, Cr]
+    nelements_max: 4
+    energy_above_hull_max: 0.08
+    limit_per_query: 25
+
+  - name: semiconductor_iii_v
+    pattern: pairwise_chemsys
+    group_a: [B, Al, Ga, In]
+    group_b: [N, P, As, Sb]
+    energy_above_hull_max: 0.08
+    limit_per_query: 20
+
+  - name: semiconductor_ii_vi
+    pattern: pairwise_chemsys
+    group_a: [Zn, Cd, Hg]
+    group_b: [O, S, Se, Te]
+    energy_above_hull_max: 0.08
+    limit_per_query: 20
+
+  - name: semiconductor_group_iv
+    pattern: chemsys_list
+    chemsys: [Si, Ge, C, Sn, C-Si, Si-Ge, Si-Sn, Ge-Sn]
+    energy_above_hull_max: 0.15
+    limit_per_query: 30
+
+  - name: oxide_binary
+    pattern: elements_plus_fixed
+    fixed: [O]
+    vary: [Ti, Zn, Sn, Nb, Ta, Zr, Hf, W, Mo, V, Ce, Fe, Mn, Co, Ni, Cr, Cu,
+           Al, Ga, In, Bi, Sb, Pb, Ba, Sr, Ca, Mg, Li, Na, K, Sc, Y, La, Si, Ge]
+    nelements_max: 2
+    energy_above_hull_max: 0.08
+    limit_per_query: 20
+
+  - name: perovskite_oxide
+    pattern: pairwise_chemsys_with_suffix
+    group_a: [Ba, Sr, Pb, Ca, K, Na]
+    group_b: [Ti, Zr, Nb, Hf, Sn, Ta]
+    suffix: O
+    energy_above_hull_max: 0.08
+    limit_per_query: 15
+
+  - name: magnetic_spinel_oxide
+    pattern: pairwise_chemsys_with_suffix
+    group_a: [Fe, Co, Ni, Mn, Cr]
+    group_b: [Fe, Co, Ni, Mn, Cr, Zn, Ti]
+    suffix: O
+    energy_above_hull_max: 0.08
+    limit_per_query: 12
+
+# Applied to every cluster query: drops radioactive/synthetic elements that
+# would add scientifically uninteresting clutter to the graph.
+exclude_elements:
+  [Tc, Pm, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, "No", Lr]
 
 # Band-gap buckets (DFT-computed gaps from MP are systematically underestimated
 # relative to experiment, so thresholds are tuned for DFT-scale values).
@@ -68,4 +131,5 @@ transition_metals:
 # similar_to edges: cosine similarity over z-scored property vectors
 # (band_gap, formation_energy_per_atom, density, total_magnetization).
 similarity:
-  min_edge_weight: 0.7
+  min_edge_weight: 0.6
+  top_k: 5

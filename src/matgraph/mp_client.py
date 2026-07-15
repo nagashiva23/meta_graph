@@ -1,10 +1,12 @@
-"""Materials Project REST client: fetch + cache one canonical record per formula."""
+"""Materials Project REST client: chemistry-driven cluster queries, deduped
+and cached to disk as one JSON record per material_id."""
 
 from __future__ import annotations
 
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -46,64 +48,193 @@ def _api_key() -> str:
     return key
 
 
-def _get(path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-    resp = requests.get(
-        f"{MP_BASE_URL}{path}",
-        params=params,
-        headers={"X-API-KEY": _api_key()},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["data"]
+def _get(path: str, params: dict[str, Any], retries: int = 3) -> list[dict[str, Any]]:
+    last_error: Exception | None = None
+    for attempt in range(1, retries + 1):
+        try:
+            resp = requests.get(
+                f"{MP_BASE_URL}{path}",
+                params=params,
+                headers={"X-API-KEY": _api_key()},
+                timeout=60,
+            )
+            resp.raise_for_status()
+            return resp.json()["data"]
+        except (requests.exceptions.RequestException,) as exc:
+            last_error = exc
+            if attempt < retries:
+                wait = 2**attempt
+                logger.warning("request failed (attempt %d/%d): %s; retrying in %ds", attempt, retries, exc, wait)
+                time.sleep(wait)
+    raise MPClientError(f"request to {path} failed after {retries} attempts") from last_error
 
 
-def fetch_summary_candidates(formula: str) -> list[dict[str, Any]]:
-    """Fetch all summary docs for a formula (may include multiple polymorphs)."""
-    return _get(
-        "/materials/summary/",
-        {"formula": formula, "_fields": ",".join(SUMMARY_FIELDS), "_limit": 1000},
-    )
+# --- cluster (bulk) queries --------------------------------------------------
 
 
-def select_canonical(candidates: list[dict[str, Any]]) -> dict[str, Any]:
-    """Pick the ground-state polymorph: lowest energy above the convex hull."""
-    if not candidates:
-        raise MPClientError("no candidates to select from")
-    return min(candidates, key=lambda d: d.get("energy_above_hull", float("inf")))
+def _query_summary(
+    params: dict[str, Any], exclude_elements: list[str], limit: int
+) -> list[dict[str, Any]]:
+    request_params = {
+        **params,
+        "_fields": ",".join(SUMMARY_FIELDS),
+        "_sort_fields": "energy_above_hull",
+        "_limit": limit,
+    }
+    if exclude_elements:
+        # The API caps exclude_elements at 60 chars as a comma-joined string,
+        # but accepts it fine as repeated query params - `requests` does this
+        # automatically for a list-valued param.
+        request_params["exclude_elements"] = exclude_elements
+    return _get("/materials/summary/", request_params)
 
 
-def fetch_robocrys_description(material_id: str) -> str | None:
-    """Fetch the human-readable structure description for a material, if available."""
-    docs = _get(
-        "/materials/robocrys/",
-        {"material_ids": material_id, "_fields": "material_id,description", "_limit": 1},
-    )
-    if not docs:
-        return None
-    return docs[0].get("description")
+def _cluster_queries(cluster: dict[str, Any]) -> list[dict[str, Any]]:
+    """Expand a cluster spec into concrete MP query param dicts.
+
+    See config/materials.yaml's `clusters` section for the pattern docs.
+    """
+    pattern = cluster["pattern"]
+
+    if pattern == "elements_plus_fixed":
+        fixed = cluster["fixed"]
+        queries = []
+        for element in cluster["vary"]:
+            queries.append(
+                {
+                    "elements": ",".join([*fixed, element]),
+                    "nelements_max": cluster["nelements_max"],
+                    "energy_above_hull_max": cluster["energy_above_hull_max"],
+                }
+            )
+        return queries
+
+    if pattern == "pairwise_chemsys":
+        chemsys = [f"{a}-{b}" for a in cluster["group_a"] for b in cluster["group_b"]]
+        return [
+            {"chemsys": cs, "energy_above_hull_max": cluster["energy_above_hull_max"]}
+            for cs in chemsys
+        ]
+
+    if pattern == "pairwise_chemsys_with_suffix":
+        suffix = cluster["suffix"]
+        chemsys = [
+            f"{a}-{b}-{suffix}"
+            for a in cluster["group_a"]
+            for b in cluster["group_b"]
+            if a != b
+        ]
+        return [
+            {"chemsys": cs, "energy_above_hull_max": cluster["energy_above_hull_max"]}
+            for cs in chemsys
+        ]
+
+    if pattern == "chemsys_list":
+        return [
+            {"chemsys": cs, "energy_above_hull_max": cluster["energy_above_hull_max"]}
+            for cs in cluster["chemsys"]
+        ]
+
+    raise ValueError(f"unknown cluster pattern: {pattern!r}")
 
 
-def fetch_material(formula: str) -> dict[str, Any]:
-    """Fetch and assemble the full raw record for one formula's canonical material."""
-    candidates = fetch_summary_candidates(formula)
-    material = select_canonical(candidates)
-    material["description"] = fetch_robocrys_description(material["material_id"])
-    return material
+def fetch_cluster(cluster: dict[str, Any], exclude_elements: list[str]) -> list[dict[str, Any]]:
+    """Fetch every sub-query for one cluster, tagging each doc with its cluster name."""
+    limit = cluster["limit_per_query"]
+    results: list[dict[str, Any]] = []
+    for params in _cluster_queries(cluster):
+        try:
+            docs = _query_summary(params, exclude_elements, limit)
+        except MPClientError:
+            logger.warning("skipping sub-query %s (%s) after repeated failures", params, cluster["name"])
+            continue
+        for doc in docs:
+            doc["_cluster"] = cluster["name"]
+        results.extend(docs)
+    return results
 
 
-def cache_path(data_dir: Path, formula: str) -> Path:
-    return data_dir / f"{formula}.json"
+def dedupe_by_formula(materials: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse to one entry per formula_pretty: the lowest-energy_above_hull polymorph."""
+    best: dict[str, dict[str, Any]] = {}
+    for m in materials:
+        formula = m["formula_pretty"]
+        if formula not in best or m["energy_above_hull"] < best[formula]["energy_above_hull"]:
+            best[formula] = m
+    return list(best.values())
 
 
-def fetch_and_cache(formula: str, data_dir: Path, refresh: bool = False) -> dict[str, Any]:
-    """Fetch a material's raw record, using the on-disk cache unless refresh=True."""
-    path = cache_path(data_dir, formula)
-    if path.exists() and not refresh:
-        logger.info("cache hit: %s", path)
-        return json.loads(path.read_text())
+def fetch_robocrys_batch(material_ids: list[str], batch_size: int = 100) -> dict[str, str]:
+    """Fetch robocrys descriptions for many materials at once (batched, confirmed
+    supported by the API: material_ids accepts a comma-separated list)."""
+    descriptions: dict[str, str] = {}
+    for i in range(0, len(material_ids), batch_size):
+        batch = material_ids[i : i + batch_size]
+        docs = _get(
+            "/materials/robocrys/",
+            {
+                "material_ids": ",".join(batch),
+                "_fields": "material_id,description",
+                "_limit": len(batch),
+            },
+        )
+        for doc in docs:
+            descriptions[doc["material_id"]] = doc.get("description")
+        logger.info("fetched robocrys descriptions %d/%d", min(i + batch_size, len(material_ids)), len(material_ids))
+    return descriptions
 
-    logger.info("fetching from Materials Project: %s", formula)
-    material = fetch_material(formula)
+
+def fetch_all_clusters(
+    clusters: list[dict[str, Any]], exclude_elements: list[str]
+) -> list[dict[str, Any]]:
+    """Fetch every cluster, dedupe by formula across all of them, attach robocrys text."""
+    all_docs: list[dict[str, Any]] = []
+    for cluster in clusters:
+        docs = fetch_cluster(cluster, exclude_elements)
+        logger.info("cluster %-28s -> %d raw docs", cluster["name"], len(docs))
+        all_docs.extend(docs)
+
+    materials = dedupe_by_formula(all_docs)
+    logger.info("deduped %d raw docs -> %d unique materials", len(all_docs), len(materials))
+
+    material_ids = [m["material_id"] for m in materials]
+    descriptions = fetch_robocrys_batch(material_ids)
+    for m in materials:
+        m["description"] = descriptions.get(m["material_id"])
+
+    return materials
+
+
+# --- disk cache --------------------------------------------------------------
+
+MANIFEST_NAME = "_manifest.json"
+
+
+def cache_path(data_dir: Path, material_id: str) -> Path:
+    return data_dir / f"{material_id}.json"
+
+
+def fetch_and_cache_bulk(
+    clusters: list[dict[str, Any]],
+    exclude_elements: list[str],
+    data_dir: Path,
+    refresh: bool = False,
+) -> list[dict[str, Any]]:
+    """Fetch every cluster and cache each material as data/raw/<material_id>.json,
+    plus a manifest listing all cached ids. Reuses the cache unless refresh=True."""
+    manifest_path = data_dir / MANIFEST_NAME
+    if manifest_path.exists() and not refresh:
+        material_ids = json.loads(manifest_path.read_text())
+        logger.info("cache hit: %d materials from %s", len(material_ids), manifest_path)
+        return [json.loads(cache_path(data_dir, mid).read_text()) for mid in material_ids]
+
+    materials = fetch_all_clusters(clusters, exclude_elements)
+
     data_dir.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(material, indent=2))
-    return material
+    material_ids = []
+    for m in materials:
+        material_ids.append(m["material_id"])
+        cache_path(data_dir, m["material_id"]).write_text(json.dumps(m, indent=2))
+    manifest_path.write_text(json.dumps(sorted(material_ids), indent=2))
+
+    return materials
