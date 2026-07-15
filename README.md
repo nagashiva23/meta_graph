@@ -51,8 +51,9 @@ as the graph/vector storage and pipeline layer.
 | Phase 3 | CGCNN crystal-structure embeddings, structural similarity search, element substitution | Not started |
 
 Phase 1 deliverable, as built and verified: a graph of **794 materials**
-spanning **46 elements**, **106 space groups**, **143 chemical systems**, and
-**5 application domains**, interconnected by **11,574 edges** — built entirely
+spanning **46 elements**, **106 space groups**, **143 chemical systems**,
+**131 oxidation states**, **261 stoichiometric formula patterns**, and
+**5 application domains**, interconnected by **14,681 edges** — built entirely
 from cached, reproducible Materials Project data with zero LLM calls.
 
 ## 3. Dataset
@@ -107,6 +108,28 @@ add no scientific value to a discovery-oriented graph.
 **Result:** 8 clusters → ~2,000 raw candidate documents → **794 unique
 materials** after cross-cluster deduplication.
 
+### Properties captured
+
+All of the following come from a single `/materials/summary/` query per
+cluster sub-pattern — no additional API endpoints or requests are needed,
+since Materials Project exposes elastic, dielectric, oxidation-state, and
+structural data as extra fields on the same summary document.
+
+| Category | Fields | Coverage (of 794) |
+|---|---|---|
+| Core (band gap, stability, density, magnetism, symmetry, …) | `band_gap`, `formation_energy_per_atom`, `energy_above_hull`, `density`, `total_magnetization`, `ordering`, `symmetry`, `theoretical`, … | 100% |
+| Electronic structure | `cbm`, `vbm`, `efermi`, `is_magnetic`, `num_magnetic_sites` | 100% |
+| **Elastic** (PRD: "Elastic Properties") | `bulk_modulus` (VRH), `shear_modulus` (VRH), `universal_anisotropy`, `homogeneous_poisson` | **18.0%** (143/794) |
+| **Dielectric** (PRD: "Dielectric Properties") | `e_total`, `e_electronic`, `e_ionic`, refractive index `n` | **19.9%** (158/794) |
+| **Oxidation states** (PRD: "Oxidation States") | `possible_species` → `OxidationState` nodes | 93.1% (739/794) |
+| Full crystal structure | `structure` (lattice + atomic positions) — cached to disk for Phase 3, not added to the graph (see §12) | 100% |
+
+Elastic and dielectric tensors require an extra DFPT calculation Materials
+Project hasn't run for every entry, so real coverage is much lower than core
+properties — this was measured directly against the full 794-material set,
+not estimated (an earlier spot-check on 50 materials suggested ~84%/~70%
+coverage, which turned out to be a sampling-bias artifact; see §12).
+
 ## 4. Graph Architecture
 
 ### Design principle
@@ -123,7 +146,11 @@ complexity without adding groupability, which is the entire point of a
 knowledge graph over a flat table. `band_gap` and `energy_above_hull`
 *are* additionally represented as categorical nodes (`PropertyClass`, see
 below) precisely because their **bucketed** form is what's actually shared
-and traversable — the raw float isn't.
+and traversable — the raw float isn't. Elastic and dielectric properties
+follow the same rule: they stay as attributes (§3), since bucketing them
+usefully would need domain-specific thresholds not yet defined, whereas
+`possible_species` and `formula_anonymous` *are* inherently categorical
+(a small, shared vocabulary) and became nodes directly — no bucketing needed.
 
 ### Node types
 
@@ -136,6 +163,8 @@ and traversable — the raw float isn't.
 | `ChemicalSystem` | A material's element set as a system (e.g. `Fe-Li-O-P`) | `chemsys` | 143 |
 | `PropertyClass` | A categorical bucket a material falls into (band-gap class, stability class, magnetic ordering) | `kind` + `name` | 11 |
 | `ApplicationDomain` | A materials-science use case (battery cathode, semiconductor device, …) | `name` | 5 |
+| `OxidationState` | An ionic species (e.g. `Fe2+`, `O2-`) a material contains | `species` | 131 |
+| `FormulaPattern` | Anonymized stoichiometric pattern (e.g. `ABC3` for perovskites) | `pattern` | 261 |
 
 Every shareable node type declares an identity key, so re-running the
 pipeline — or two different materials both containing Oxygen — resolves to
@@ -153,6 +182,8 @@ mechanism is what makes the graph's hub structure possible (see §6).
 | `suitable_for` | Material → ApplicationDomain | Which application rule(s) it satisfies | `rule`: the exact rule text that fired (explainability) |
 | `similar_to` | Material → Material | Property-vector similarity to its nearest neighbours | `weight`: cosine similarity (0–1) |
 | `crystal_system` | SpaceGroup → CrystalSystem | Which crystal system a space group belongs to | — |
+| `has_oxidation_state` | Material → OxidationState | Ionic species present in the material | — |
+| `has_formula_pattern` | Material → FormulaPattern | Which stoichiometric pattern it matches | — |
 
 ## 5. Construction Pipeline
 
@@ -227,13 +258,29 @@ shared-node design in §4 produces directly. Concretely, in the built graph:
 - **PropertyClass nodes group by behavior, not composition.** A `wide_gap`
   material and another `wide_gap` material may share no elements at all, but
   are still one hop apart through the same bucket node.
+- **Oxidation states group by ionic chemistry.** `O2-` alone connects **695
+  of 794 materials** (87%); `Li+` connects 227. Two materials with no shared
+  elements can still be one hop apart if they share an oxidation state —
+  this is also the anchor Phase 3's ionic-substitution model will reason over.
+- **Formula patterns group by stoichiometric shape, independent of
+  composition.** `BaTiO3` and `CaHfO3` share nothing element-wise but are
+  both `ABC3` — 44 materials share that one node. 261 distinct patterns
+  cover 794 materials, so this dimension is denser than `ChemicalSystem`
+  (143) but sparser than `Element` (46), a genuinely different grouping axis.
 - **`similar_to` edges add a direct, weighted shortcut.** Rather than a flat
   similarity threshold (which stops scaling once the dataset is larger than
   a handful of materials — see §12), each material links to its **top-5**
-  nearest neighbours by cosine similarity over four z-scored properties
-  (`band_gap`, `formation_energy_per_atom`, `density`, `total_magnetization`),
-  keeping only pairs with similarity ≥ 0.6. This produced 3,970 directed
-  `similar_to` edges (2,616 unique undirected pairs) in the current graph.
+  nearest neighbours by cosine similarity over a **10-dimensional**, z-scored
+  property vector spanning electronic (`band_gap`), thermodynamic
+  (`formation_energy_per_atom`, `energy_above_hull`), structural-density
+  (`density`), magnetic (`total_magnetization`), mechanical (`bulk_modulus_vrh`,
+  `shear_modulus_vrh`, `universal_anisotropy`, `homogeneous_poisson`), and
+  dielectric (`dielectric_total`) behavior — keeping only pairs with
+  similarity ≥ 0.6. Fields with partial coverage (elastic, dielectric) are
+  mean-imputed rather than dropped, so a missing value contributes neutrally
+  instead of skewing the comparison (see §12 for which fields were
+  deliberately left out, and why). This produced 3,964 directed `similar_to`
+  edges (2,708 unique undirected pairs) in the current graph.
 
 The net effect: **no material in the graph is an isolated island.** Every
 material has at least a `contains` edge (verified structurally on every
@@ -243,9 +290,11 @@ chemistry.
 
 ## 7. How Materials Are Grouped
 
-Grouping happens through two independent, fully deterministic mechanisms —
-both configured in [`config/materials.yaml`](config/materials.yaml), so every
-grouping decision is inspectable and traceable to a concrete rule.
+Grouping happens through three independent, fully deterministic mechanisms.
+The first two are configured in [`config/materials.yaml`](config/materials.yaml),
+so every bucket/rule decision is inspectable and traceable to a concrete
+threshold; the third comes directly from categorical fields Materials
+Project already provides, with no thresholds to define.
 
 ### 7.1 Property classification (buckets)
 
@@ -280,31 +329,48 @@ near-misses are still present in the graph (reachable via `contains`,
 `member_of`, etc.), even when they don't pass the stricter domain-membership
 bar.
 
+### 7.3 Categorical fields (no thresholds needed)
+
+Two Materials Project fields are already categorical, so they group
+materials directly rather than through a bucketing rule:
+
+- **Oxidation states** (`possible_species`) — e.g. `BaTiO3` groups with every
+  other material containing `Ti4+`, independent of what else those materials
+  contain.
+- **Formula patterns** (`formula_anonymous`) — e.g. every `AB2C4`-pattern
+  material groups together regardless of which elements A, B, and C actually
+  are, capturing stoichiometric shape (spinel-like 1:2:4 ratios, in this case)
+  as a grouping dimension distinct from both composition and symmetry.
+
 ## 8. Verified Graph Statistics
 
 Numbers below are from the current build (`uv run python scripts/build_graph.py`),
 read directly out of Cognee's graph store — not estimated.
 
-**Nodes — 1,112 total**
+**Nodes — 1,504 total**
 
 | Type | Count |
 |---|---|
 | Material | 794 |
-| Element | 46 |
-| SpaceGroup | 106 |
+| FormulaPattern | 261 |
 | ChemicalSystem | 143 |
+| OxidationState | 131 |
+| SpaceGroup | 106 |
+| Element | 46 |
 | PropertyClass | 11 |
 | CrystalSystem | 7 |
 | ApplicationDomain | 5 |
 
-**Edges — 11,574 total**
+**Edges — 14,681 total**
 
 | Relationship | Count |
 |---|---|
-| `similar_to` | 3,970 |
+| `similar_to` | 3,964 |
+| `has_oxidation_state` | 2,319 |
 | `contains` | 2,269 |
 | `classified_as` | 2,135 |
 | `suitable_for` | 1,506 |
+| `has_formula_pattern` | 794 |
 | `has_space_group` | 794 |
 | `member_of` | 794 |
 | `crystal_system` | 106 |
@@ -339,9 +405,13 @@ illustrative pseudo-queries:
   led by `Al2O3` (5.87 eV) and `SiO2` (5.68 eV).
 - **"Which materials are battery cathode candidates?"** → 237 materials,
   each with the exact rule text that qualified it stored on its edge.
-- **Nearest-neighbour similarity** — e.g. `Li3Ti7O14 ↔ Li7Ti16O32` at
-  cosine similarity 1.000 (near-identical property vectors despite being
-  different formulas/polymorphs).
+- **"What connects BaTiO3 to CaHfO3 despite sharing no elements?"** → both
+  match the `ABC3` `FormulaPattern` node (44 materials total).
+- **"Which materials contain Ti4+?"** → 107 materials, found in one hop via
+  `has_oxidation_state`.
+- **Nearest-neighbour similarity** — e.g. `KNb13O33 ↔ NaNb13O33` at cosine
+  similarity 1.000 over the full 10-dimensional property vector (near-identical
+  behavior despite being different formulas/polymorphs).
 
 ## 10. Project Structure
 
@@ -435,6 +505,47 @@ kept here rather than scattered across commit messages:
 - **Robocrystallographer descriptions batch-fetch**: confirmed the
   `/materials/robocrys/` endpoint accepts a comma-separated list of
   `material_ids`, cutting ~794 individual calls down to ~8 batched ones.
+- **Elastic/dielectric/oxidation-state/structure data all come from the same
+  endpoint already being queried** — widening `_fields=` on the existing
+  `/materials/summary/` calls added ~20 new attributes and two new node
+  types at zero extra HTTP requests. No new endpoints were needed.
+- **Full crystal `structure` is cached but deliberately not a graph node
+  property.** It's fetched (needed for Phase 3's CGCNN) and written to
+  `data/raw/<material_id>.json`, but never passed into a `Material` node:
+  it's a bulky nested lattice/coordinates blob, not something meaningful to
+  embed or traverse the way scalar attributes are — and the robocrys
+  `description` field already captures the same structural facts in
+  embeddable text form, which is what actually serves LLM-facing relational
+  reasoning.
+- **A 50-material spot-check overestimated elastic/dielectric coverage.**
+  An early sample suggested ~84% elastic and ~70% dielectric coverage; the
+  real number across all 794 materials is 18.0% and 19.9% respectively (see
+  §3). The sample happened to be drawn disproportionately from
+  well-characterized battery-cathode compounds fetched first. Lesson: don't
+  extrapolate data coverage from an early slice of a clustered fetch order —
+  measure against the full set.
+- **`similar_to`'s similarity vector was redesigned from 4 to 10 fields**
+  once elastic/dielectric/thermodynamic data became available, with each
+  inclusion and exclusion justified explicitly (see the comment block above
+  `SIMILARITY_FIELDS` in `enrich.py`): intensive/size-normalized fields only
+  (excludes `volume`, `nsites`, `num_magnetic_sites`, which are confounded by
+  unit-cell choice), fields on a universal scale only (excludes `cbm`/`vbm`/
+  `efermi`, referenced to each calculation's own internal zero), and no
+  redundant fields (excludes `is_magnetic`, which duplicates
+  `total_magnetization`; excludes `e_electronic`/`e_ionic`/refractive index,
+  which are derived from/correlated with `dielectric_total`). Missing values
+  in the partially-covered fields (elastic, dielectric) are mean-imputed
+  rather than dropped, so a material with no elastic data still gets
+  meaningful `similar_to` edges from its other 8 dimensions.
+- **Raw-dict vs. DataPoint field name mismatch caught before it silently
+  broke similarity.** The similarity vector is computed from *raw* MP JSON
+  (before `Material` objects exist), where `bulk_modulus`/`shear_modulus`
+  are nested `{voigt, reuss, vrh}` dicts and dielectric's raw key is
+  `e_total` — not the flattened `bulk_modulus_vrh`/`dielectric_total` names
+  used on the `Material` DataPoint. A naive `dict.get(field_name)` would
+  have silently returned `None` for every material on these fields. Fixed
+  with an explicit `_similarity_value()` extraction shim rather than
+  renaming fields to match (the raw JSON shape isn't ours to change).
 
 ## 13. Roadmap
 
