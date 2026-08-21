@@ -24,9 +24,12 @@ FormulaPatterns, 143 ChemicalSystems, 131 OxidationStates, 106 SpaceGroups,
 46 Elements, 12 ApplicationDomains, 11 PropertyClasses, 7 CrystalSystems) and
 15,112 edges, built from cached Materials Project data with **zero LLM calls**.
 
-> ⚠️ `README.md` and the review deck still quote the pre-PR-#2 figures (1,504
-> nodes / 14,681 edges / 5 application domains). They need updating to 1,511 /
-> 15,112 / 12 before the next review.
+`README.md` was updated to these figures alongside PR #2. The review deck
+(`matgraphrag_presentation.tex`, maintained in Overleaf outside this repo) was
+updated to match at the same time — schema, results, work-completed and
+conclusion slides, plus a new slide on symmetry-based screening. Its traversal
+figures (756 O-containing, 80 Li-stable, 143 wide-gap, O²⁻ in 695, Ti⁴⁺ in 107,
+44 ABC3) were re-checked against the rebuild and all still hold unchanged.
 
 ---
 
