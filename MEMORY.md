@@ -205,17 +205,17 @@ way:
 Tracked honestly rather than hidden. Ordered by the tier system used in the
 hardening review:
 
-**Tier 2 — testing** (next up)
-- No `tests/` directory exists. It was planned in `docs/PHASE1_PLAN.md` and
-  never built. There is zero automated coverage of the classification rules,
-  application-domain rules, or similarity math.
-- **Blocker discovered in PR #1:** `enrich.py` imports `schema.py`, which
-  imports `cognee` — so none of `enrich.py`'s pure logic (bucketing, domain
-  rules, z-scoring, cosine similarity) can be imported for testing without the
-  full heavy dependency stack installed. Verification in PR #1 had to extract
-  functions via `ast` and exec them in isolation, which is not a sustainable
-  testing strategy. Splitting the pure computation out from the DataPoint
-  construction would make this directly testable.
+**Tier 2 — testing** — ✅ done in PR #2 (84 tests)
+
+> **Correction to a claim made in PR #1.** That PR logged a "blocker": that
+> `enrich.py` can't be imported for testing because it pulls in `cognee` via
+> `schema.py`, and suggested the module would need splitting first. That was
+> overstated. It was only true because dependencies weren't installed at the
+> time — the workaround (extracting functions via `ast`) was a symptom of an
+> empty environment, not of the module's design. Once `uv sync` ran, `matgraph`
+> imports directly as an editable install and the test suite needed no
+> restructuring at all. Recorded here rather than deleted, because "the fix is
+> to restructure the module" would have been wasted work.
 
 **Tier 3 — scalability**
 - Adding a new cluster to `materials.yaml` does not trigger a fetch for it;
