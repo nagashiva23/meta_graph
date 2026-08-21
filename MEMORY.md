@@ -14,8 +14,8 @@ changed, and anything it deliberately did *not* do.
 
 | Phase | Description | Status |
 |---|---|---|
-| **Phase 1** | Knowledge graph construction from Materials Project data | ✅ Complete |
-| **Phase 1.5** | Robustness/scalability hardening before retrieval work | 🔨 In progress |
+| **Phase 1** | Knowledge graph construction from Materials Project data | ✅ Complete, and **independently reproduced** on 2026-08-21 |
+| **Phase 1.5** | Robustness/scalability hardening before retrieval work | 🔨 Tier 1 + Tier 2 + Tier 6 done; Tiers 3–5 open |
 | Phase 2 | GraphRAG retrieval + LLM-generated, evidence-backed recommendations | ⬜ Not started |
 | Phase 3 | CGCNN crystal-structure embeddings, structural similarity, element substitution | ⬜ Not started |
 
@@ -77,11 +77,81 @@ and looked successful. Checks are now collected and raise, so
 actually verified before), every Material has exactly one `has_space_group`
 edge, and at least one `classified_as` edge.
 
-**Not done in this PR:** no test suite yet (Tier 2), and none of this has been
-validated against a real pipeline run — the environment still has no
-`MP_API_KEY`, `.venv/`, or cached data. Each change was verified by exercising
-the extracted logic in isolation, which is a weaker guarantee than a real
-build.
+**5. Tier 2 — unit tests** (`tests/`, 84 tests, run in 0.03s)
+Covers bucket boundaries (including the tie-break where overlapping buckets
+share endpoints), all five application rules either side of their thresholds,
+the `similar_to` invariants, and the validation layer. Tests load the **real**
+`config/materials.yaml`, so changing a threshold or rule text there fails a
+test — the config is as much a part of the behaviour as the Python is.
+
+Two guards against future drift: every `REQUIRED_RAW_FIELDS` entry is asserted
+to actually be enforced, and each fired rule's text is asserted to match
+`materials.yaml`.
+
+*One test failed on first run, and it was the test's fault, not the code's:*
+`_cosine([1,2], [-1,-2])` returns `-0.9999999999999998`, and asserting exact
+float equality was simply the wrong assertion. Fixed with `pytest.approx`.
+
+**6. First end-to-end pipeline run** — see "Verification run" below.
+
+---
+
+## Verification run — 2026-08-21 (first end-to-end run of this codebase)
+
+Until this point the pipeline had **never been executed in a development
+environment**; the graph statistics in `README.md` and the review deck came
+from an earlier run on another machine. This run rebuilt everything from
+scratch (`uv sync` → `fetch_materials.py` → `build_graph.py`) against the live
+Materials Project API.
+
+**Every published figure reproduced exactly.**
+
+| Quantity | Published | This run |
+|---|---|---|
+| Materials | 794 | 794 |
+| Total nodes | 1,504 | 1,504 |
+| Total edges | 14,681 | 14,681 |
+| Elements | 46 | 46 |
+| Chemical systems | 143 | 143 |
+| Formula patterns | 261 | 261 |
+| Oxidation states | 131 | 131 |
+| Space groups | 106 | 106 |
+| Elastic coverage | 18.0% | 18.0% (143/794) |
+| Dielectric coverage | 19.9% | 19.9% (158/794) |
+| `suitable_for` edges = domain sum | 1,506 | 1,506 |
+
+The fetch pulled 1,692 raw docs across the 8 clusters and deduplicated to 794
+unique materials by formula. This makes the Phase 1 numbers **reproducible from
+a clean checkout**, not just self-reported.
+
+**All five structural checks passed**, including the manifest check added in
+PR #1 that had never actually been running:
+
+```
+OK: 794 Material nodes present.
+OK: every Material has at least one contains edge (no isolated materials).
+OK: Material count matches the fetch manifest exactly (794).
+OK: every Material has exactly one space group.
+OK: every Material has at least one property classification.
+```
+
+**What the Tier 1 fixes did on real data: nothing — which is the right
+outcome.** Zero of 794 records were skipped as incomplete, and zero values were
+unclassifiable. The fixes are insurance against future data, not silent
+behaviour changes to the current build.
+
+**Two previously-unknown things now confirmed:**
+- **The vector store is real and usable.** `Material_description` and
+  `Material_formula` tables in LanceDB each hold 794 rows of 384-dimensional
+  non-zero embeddings, generated locally by `fastembed` with no API key. This
+  had never been verified, and Phase 2's vector-search fallback depends on it.
+- **Data coverage details:** robocrys descriptions exist for 792/794 (so the
+  missing-description fallback path is genuinely exercised), oxidation states
+  for 739/794 (93.1%), and the full crystal `structure` blob for **794/794** —
+  meaning Phase 3's CGCNN input is completely cached already.
+
+Artifacts produced (all gitignored): `data/raw/` 16 MB, `.cognee_system/`
+65 MB, `artifacts/graph.html` 18 MB.
 
 ---
 
@@ -236,10 +306,11 @@ hardening review:
 
 **Tier 5 — Phase 2 preparation**
 - No node type for logging retrieval interactions / recommendation provenance.
-- Cognee's `index_fields` auto-embedding into LanceDB has never been exercised,
-  so the vector-search fallback Phase 2 depends on is unverified.
+- ~~Cognee's `index_fields` auto-embedding into LanceDB is unverified.~~
+  ✅ Resolved by the verification run: 794 rows of 384-dim non-zero embeddings
+  in both `Material_description` and `Material_formula`.
 
-**Tier 6 — operational**
-- The pipeline has never been run in the current development environment (no
-  `.venv/`, no `data/raw/`, no `.cognee_system/`). The graph statistics quoted
-  above come from a previous run on a machine with a real `MP_API_KEY`.
+**Tier 6 — operational** — ✅ resolved
+- ~~The pipeline has never been run in the current development environment.~~
+  Run end-to-end on 2026-08-21; every published figure reproduced exactly. See
+  "Verification run" above.
