@@ -9,6 +9,7 @@ formula (see config/materials.yaml).
 from __future__ import annotations
 
 import json
+import logging
 import math
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,8 @@ from matgraph.schema import (
     PropertyClass,
     SpaceGroup,
 )
+
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = ROOT / "config" / "materials.yaml"
@@ -57,17 +60,33 @@ def load_raw_materials(config: dict[str, Any]) -> list[dict[str, Any]]:
 # --- classification -----------------------------------------------------
 
 
-def _bucket(value: float, buckets: list[dict[str, Any]]) -> dict[str, Any]:
+def _bucket(value: float | None, buckets: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Find the bucket `value` falls into, or None if it matches none of them.
+
+    Returns None rather than raising. The buckets in config/materials.yaml are
+    exhaustive over the values Materials Project actually returns, so a miss
+    means one malformed record - a missing value, or a NaN (which fails every
+    comparison and would otherwise fall through to a raise). Aborting the whole
+    graph build over a single bad material is the wrong trade: the caller logs
+    it and skips just that one classification. This also matches the existing
+    convention in this module, where classify_ordering already returns None for
+    input it can't classify.
+    """
+    if value is None or value != value:  # noqa: PLR0124 (NaN never equals itself)
+        return None
     for bucket in buckets:
         lo = bucket.get("min", -math.inf)
         hi = bucket.get("max", math.inf)
         if lo <= value <= hi:
             return bucket
-    raise ValueError(f"value {value} did not match any bucket in {buckets}")
+    return None
 
 
-def classify_band_gap(band_gap: float, config: dict[str, Any]) -> dict[str, Any]:
+def classify_band_gap(band_gap: float | None, config: dict[str, Any]) -> dict[str, Any] | None:
     bucket = _bucket(band_gap, config["band_gap_buckets"])
+    if bucket is None:
+        logger.warning("band_gap %r matched no bucket; skipping band_gap classification", band_gap)
+        return None
     return {
         "kind": "band_gap",
         "name": bucket["name"],
@@ -75,8 +94,13 @@ def classify_band_gap(band_gap: float, config: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def classify_stability(e_hull: float, config: dict[str, Any]) -> dict[str, Any]:
+def classify_stability(e_hull: float | None, config: dict[str, Any]) -> dict[str, Any] | None:
     bucket = _bucket(e_hull, config["stability_buckets"])
+    if bucket is None:
+        logger.warning(
+            "energy_above_hull %r matched no bucket; skipping stability classification", e_hull
+        )
+        return None
     return {
         "kind": "stability",
         "name": bucket["name"],
@@ -347,13 +371,18 @@ def build_graph(
         )
         chemsys = get_chemsys(raw["chemsys"])
 
+        # Any of these can be None for a material whose value is missing or
+        # unclassifiable; that material simply gets fewer classified_as edges
+        # rather than failing the build (see _bucket).
         classifications = [
-            classify_band_gap(raw["band_gap"], config),
-            classify_stability(raw["energy_above_hull"], config),
+            c
+            for c in (
+                classify_band_gap(raw["band_gap"], config),
+                classify_stability(raw["energy_above_hull"], config),
+                classify_ordering(raw["ordering"]),
+            )
+            if c is not None
         ]
-        ordering_class = classify_ordering(raw["ordering"])
-        if ordering_class:
-            classifications.append(ordering_class)
         classified_as = [
             get_property_class(c["kind"], c["name"], c["description"]) for c in classifications
         ]
