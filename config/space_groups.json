@@ -1,0 +1,1382 @@
+{
+  "1": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "1",
+    "polar": true
+  },
+  "10": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "2/m",
+    "polar": false
+  },
+  "100": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "101": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "102": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "103": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "104": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "105": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "106": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "107": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "108": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "109": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "11": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "2/m",
+    "polar": false
+  },
+  "110": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  },
+  "111": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "112": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "113": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "114": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "115": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "116": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "117": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "118": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "119": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "12": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "2/m",
+    "polar": false
+  },
+  "120": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "121": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "122": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-42m",
+    "polar": false
+  },
+  "123": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "124": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "125": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "126": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "127": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "128": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "129": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "13": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "2/m",
+    "polar": false
+  },
+  "130": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "131": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "132": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "133": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "134": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "135": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "136": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "137": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "138": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "139": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "14": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "2/m",
+    "polar": false
+  },
+  "140": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "141": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "142": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/mmm",
+    "polar": false
+  },
+  "143": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3",
+    "polar": true
+  },
+  "144": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3",
+    "polar": true
+  },
+  "145": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3",
+    "polar": true
+  },
+  "146": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3",
+    "polar": true
+  },
+  "147": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3",
+    "polar": false
+  },
+  "148": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3",
+    "polar": false
+  },
+  "149": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "15": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "2/m",
+    "polar": false
+  },
+  "150": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "151": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "152": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "153": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "154": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "155": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "32",
+    "polar": false
+  },
+  "156": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3m",
+    "polar": true
+  },
+  "157": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3m",
+    "polar": true
+  },
+  "158": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3m",
+    "polar": true
+  },
+  "159": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3m",
+    "polar": true
+  },
+  "16": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "160": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3m",
+    "polar": true
+  },
+  "161": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "3m",
+    "polar": true
+  },
+  "162": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3m",
+    "polar": false
+  },
+  "163": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3m",
+    "polar": false
+  },
+  "164": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3m",
+    "polar": false
+  },
+  "165": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3m",
+    "polar": false
+  },
+  "166": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3m",
+    "polar": false
+  },
+  "167": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-3m",
+    "polar": false
+  },
+  "168": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6",
+    "polar": true
+  },
+  "169": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6",
+    "polar": true
+  },
+  "17": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "170": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6",
+    "polar": true
+  },
+  "171": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6",
+    "polar": true
+  },
+  "172": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6",
+    "polar": true
+  },
+  "173": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6",
+    "polar": true
+  },
+  "174": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-6",
+    "polar": false
+  },
+  "175": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "6/m",
+    "polar": false
+  },
+  "176": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "6/m",
+    "polar": false
+  },
+  "177": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "622",
+    "polar": false
+  },
+  "178": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "622",
+    "polar": false
+  },
+  "179": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "622",
+    "polar": false
+  },
+  "18": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "180": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "622",
+    "polar": false
+  },
+  "181": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "622",
+    "polar": false
+  },
+  "182": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "622",
+    "polar": false
+  },
+  "183": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6mm",
+    "polar": true
+  },
+  "184": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6mm",
+    "polar": true
+  },
+  "185": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6mm",
+    "polar": true
+  },
+  "186": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "6mm",
+    "polar": true
+  },
+  "187": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-6m2",
+    "polar": false
+  },
+  "188": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-6m2",
+    "polar": false
+  },
+  "189": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-6m2",
+    "polar": false
+  },
+  "19": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "190": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-6m2",
+    "polar": false
+  },
+  "191": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "6/mmm",
+    "polar": false
+  },
+  "192": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "6/mmm",
+    "polar": false
+  },
+  "193": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "6/mmm",
+    "polar": false
+  },
+  "194": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "6/mmm",
+    "polar": false
+  },
+  "195": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "23",
+    "polar": false
+  },
+  "196": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "23",
+    "polar": false
+  },
+  "197": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "23",
+    "polar": false
+  },
+  "198": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "23",
+    "polar": false
+  },
+  "199": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "23",
+    "polar": false
+  },
+  "2": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "-1",
+    "polar": false
+  },
+  "20": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "200": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "201": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "202": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "203": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "204": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "205": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "206": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3",
+    "polar": false
+  },
+  "207": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "208": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "209": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "21": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "210": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "211": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "212": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "213": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "214": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": false,
+    "point_group": "432",
+    "polar": false
+  },
+  "215": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-43m",
+    "polar": false
+  },
+  "216": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-43m",
+    "polar": false
+  },
+  "217": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-43m",
+    "polar": false
+  },
+  "218": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-43m",
+    "polar": false
+  },
+  "219": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-43m",
+    "polar": false
+  },
+  "22": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "220": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-43m",
+    "polar": false
+  },
+  "221": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "222": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "223": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "224": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "225": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "226": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "227": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "228": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "229": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "23": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "230": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "m-3m",
+    "polar": false
+  },
+  "24": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "222",
+    "polar": false
+  },
+  "25": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "26": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "27": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "28": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "29": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "3": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "2",
+    "polar": true
+  },
+  "30": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "31": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "32": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "33": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "34": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "35": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "36": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "37": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "38": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "39": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "4": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "2",
+    "polar": true
+  },
+  "40": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "41": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "42": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "43": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "44": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "45": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "46": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "mm2",
+    "polar": true
+  },
+  "47": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "48": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "49": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "5": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "2",
+    "polar": true
+  },
+  "50": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "51": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "52": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "53": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "54": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "55": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "56": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "57": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "58": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "59": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "6": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "m",
+    "polar": true
+  },
+  "60": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "61": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "62": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "63": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "64": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "65": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "66": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "67": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "68": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "69": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "7": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "m",
+    "polar": true
+  },
+  "70": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "71": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "72": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "73": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "74": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "mmm",
+    "polar": false
+  },
+  "75": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4",
+    "polar": true
+  },
+  "76": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4",
+    "polar": true
+  },
+  "77": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4",
+    "polar": true
+  },
+  "78": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4",
+    "polar": true
+  },
+  "79": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4",
+    "polar": true
+  },
+  "8": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "m",
+    "polar": true
+  },
+  "80": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4",
+    "polar": true
+  },
+  "81": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-4",
+    "polar": false
+  },
+  "82": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "-4",
+    "polar": false
+  },
+  "83": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/m",
+    "polar": false
+  },
+  "84": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/m",
+    "polar": false
+  },
+  "85": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/m",
+    "polar": false
+  },
+  "86": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/m",
+    "polar": false
+  },
+  "87": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/m",
+    "polar": false
+  },
+  "88": {
+    "centrosymmetric": true,
+    "piezoelectric_allowed": false,
+    "point_group": "4/m",
+    "polar": false
+  },
+  "89": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "9": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "m",
+    "polar": true
+  },
+  "90": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "91": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "92": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "93": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "94": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "95": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "96": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "97": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "98": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "422",
+    "polar": false
+  },
+  "99": {
+    "centrosymmetric": false,
+    "piezoelectric_allowed": true,
+    "point_group": "4mm",
+    "polar": true
+  }
+}

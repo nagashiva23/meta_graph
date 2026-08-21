@@ -15,18 +15,119 @@ changed, and anything it deliberately did *not* do.
 | Phase | Description | Status |
 |---|---|---|
 | **Phase 1** | Knowledge graph construction from Materials Project data | ✅ Complete, and **independently reproduced** on 2026-08-21 |
-| **Phase 1.5** | Robustness/scalability hardening before retrieval work | 🔨 Tier 1 + Tier 2 + Tier 6 done; Tiers 3–5 open |
+| **Phase 1.5** | Robustness/scalability hardening before retrieval work | 🔨 Tiers 1, 2, 4, 6 done; Tiers 3 and 5 open |
 | Phase 2 | GraphRAG retrieval + LLM-generated, evidence-backed recommendations | ⬜ Not started |
 | Phase 3 | CGCNN crystal-structure embeddings, structural similarity, element substitution | ⬜ Not started |
 
-**Phase 1 deliverable as built and verified:** 1,504 nodes (794 Materials,
-261 FormulaPatterns, 143 ChemicalSystems, 131 OxidationStates, 106 SpaceGroups,
-46 Elements, 11 PropertyClasses, 7 CrystalSystems, 5 ApplicationDomains) and
-14,681 edges, built from cached Materials Project data with **zero LLM calls**.
+**Current graph (after PR #2):** 1,511 nodes (794 Materials, 261
+FormulaPatterns, 143 ChemicalSystems, 131 OxidationStates, 106 SpaceGroups,
+46 Elements, 12 ApplicationDomains, 11 PropertyClasses, 7 CrystalSystems) and
+15,112 edges, built from cached Materials Project data with **zero LLM calls**.
+
+> ⚠️ `README.md` and the review deck still quote the pre-PR-#2 figures (1,504
+> nodes / 14,681 edges / 5 application domains). They need updating to 1,511 /
+> 15,112 / 12 before the next review.
 
 ---
 
 ## PR log
+
+### PR #2 — Tier 4: domain coverage, symmetry screening, weighted edges (branch `feat/tier4-domain-coverage`)
+
+**Why:** Phase 2 retrieval can only answer questions the graph already encodes.
+With five application domains, a query about anything else had nowhere to land.
+This widens what can be asked — entirely from fields already cached, with no
+additional API calls.
+
+**Application domains: 5 → 12.** Counts measured against the real 794-material
+set, so none is dead weight:
+
+| Domain | Materials | Basis |
+|---|---|---|
+| `piezoelectric` | 130 | non-centrosymmetric symmetry + non-metallic |
+| `thermoelectric` | 100 | narrow gap 0.1–0.8 eV |
+| `ferroelectric` | 94 | polar space group + non-metallic |
+| `uv_transparent` | 33 | gap ≥ 4 eV, non-magnetic |
+| `high_k_dielectric` | 33 | dielectric constant ≥ 20, gap > 2 eV |
+| `photovoltaic_absorber` | 22 | **direct** gap 1.0–1.8 eV |
+| `hard_structural` | 19 | shear ≥ 100 GPa and bulk ≥ 150 GPa |
+
+The two symmetry rules are the most rigorous in the project: piezoelectricity
+and ferroelectricity are *forbidden by the crystal's point group* as a matter of
+physical law, not by a fitted threshold. `config/space_groups.json` (generated
+by `scripts/generate_space_groups.py`) classifies all 230 space groups, and its
+counts match the crystallographic literature exactly — 92 centrosymmetric, 68
+polar, 32 point groups — including the **432 exception**, the one
+non-centrosymmetric class whose symmetry still forces every piezoelectric
+tensor component to vanish.
+
+Spot-checked against materials whose behaviour is well known: BaTiO₃ comes out
+`ferroelectric` **and** `piezoelectric`, AlN/BN/GaN `piezoelectric`, Al₂O₃
+(sapphire) `uv_transparent` and `hard_structural`. Those are the right answers.
+
+**Deliberately NOT added: `solid_electrolyte`.** It looked like an obvious
+complement to `battery_cathode`, but the data refused it. The dataset holds only
+**3** Li materials with no transition metal, so the rule selects 1 material —
+and dropping that condition makes it overlap `battery_cathode` 51 of 52. This is
+a **dataset** gap, not a rule-design gap: the 8 clusters were built around
+cathodes and never fetch electrolyte chemistries (Li-garnets, LISICON,
+sulfides, halides). Shipping it would have been a relabelling presented as new
+capability. Logged below as a fetch-config gap.
+
+**Rules restructured into a predicate registry.** Previously five hardcoded
+`if` statements in Python, with the human-readable rule text in config —
+meaning the description and the logic could drift apart silently. Adding seven
+more would have made that worse. Now every threshold lives in
+`config/materials.yaml` beside the text describing it, and
+`_assert_rules_match_config()` fails the build if config and code disagree
+about which domains exist. A configured domain with no predicate never fires;
+a predicate with no config entry would produce a `suitable_for` edge carrying
+no rule text — an edge asserting something with no stored justification, which
+is the one thing this graph must never do. *The refactor was verified
+behaviour-preserving: all 84 pre-existing tests passed unchanged.*
+
+**`contains` edges now carry `weight` = atomic fraction.** Specified in
+`docs/PHASE1_PLAN.md` originally, never implemented. Without it the
+`LiFePO₄ → O` and `LiFePO₄ → Li` edges are indistinguishable, though oxygen is
+4/7 of the atoms and lithium 1/7 — so "materials where lithium is a major
+constituent" was unanswerable. An unparseable formula produces unweighted edges
+rather than an invented number. Verified in the built graph: all 2,269 edges
+weighted, none unweighted.
+
+**Resulting graph:** 1,511 nodes (was 1,504 — seven new `ApplicationDomain`
+nodes) and 15,112 edges (was 14,681), with `suitable_for` growing 1,506 → 1,937.
+All structural checks pass. **These numbers supersede the ones in `README.md`
+and the review deck, which still describe the 5-domain graph.**
+
+**Two findings worth keeping:**
+
+- **Cognee does not store edge properties where you would look for them.** An
+  `Edge`'s `properties` dict comes back as a *stringified* Python dict under a
+  single `"properties"` key, so the rule text sits one level down and
+  serialised: `{"properties": "{'rule': '0 < band_gap <= 3.5 eV...'}"}`. A plain
+  `edge["rule"]` returns `None` for every edge — which looks exactly like the
+  evidence was never stored. Also: `weight` comes back as a **string**, not a
+  float, and cognee synthesises an `edge_text` field
+  (`"GaAs suitable for 0 < band_gap <= 3.5 eV and not metallic."`) that is
+  embeddable. **Phase 2's retrieval layer must know all three of these.**
+  Handled by `_edge_rule()` in `verify.py`.
+- **`is_metal` is the right test, not `band_gap > 0`.** An early estimate of the
+  piezoelectric count was one too high. K₆Ta₁₁O₃₀ has `band_gap = 0.0002 eV` but
+  `is_metal = True`; a material with a numerically-tiny gap flagged metallic is
+  a metal, and would screen out the internal field. Using MP's own `is_metal`
+  determination handles this correctly where a raw threshold does not. It is
+  the only such material in the 794.
+
+**Also:** `verify.py` now asserts that **every** `suitable_for` edge carries its
+rule text (1,937/1,937 pass) — the project's central explainability claim,
+checked on every build rather than assumed. The `battery_cathode` section also
+now prints the stored rule, which it previously claimed to show but did not.
+New `scripts/verify_graph.py` runs verification against the existing graph
+without a full rebuild.
+
+**Tests: 84 → 132.**
+
+---
 
 ### PR #1 — Tier 1 robustness hardening (branch `hardening/tier1-robustness`)
 
@@ -297,12 +398,22 @@ hardening review:
   computations at 794 materials). Fine now; should be vectorized with numpy
   before the dataset grows.
 
-**Tier 4 — data coverage (directly affects Phase 2 answer quality)**
-- Only 5 `ApplicationDomain` rules exist. Phase 2 retrieval can only answer
-  questions the graph already encodes.
-- `contains` edges carry no weight. `docs/PHASE1_PLAN.md` originally specified
-  `weight = atomic fraction in formula`; the shipped code attaches a bare
-  Element list with no edge properties.
+**Tier 4 — data coverage** — mostly done in PR #2
+- ~~Only 5 `ApplicationDomain` rules exist.~~ ✅ Now 12.
+- ~~`contains` edges carry no weight.~~ ✅ Now weighted by atomic fraction.
+- **Still open — the cluster set has chemistry blind spots.** Discovered while
+  designing `solid_electrolyte`: the dataset contains only 3 Li materials
+  without a transition metal, because all 8 clusters were designed around
+  cathodes, semiconductors and oxides. Whole material families are simply
+  absent — solid electrolytes (Li-garnets, LISICON, sulfides, halides),
+  nitrides beyond III–V, chalcogenide thermoelectrics. Fixing this means new
+  clusters in `materials.yaml` and a re-fetch, which costs real API calls.
+  Worth doing before Phase 2 if retrieval is meant to answer broadly.
+- **Still open — bucket granularity.** `wide_gap` is everything above 3 eV,
+  with no finer split. Phase 2 must therefore answer precise numeric questions
+  ("band gap between 5 and 6 eV") by filtering the raw `band_gap` attribute on
+  the `Material` node, not by traversing to a `PropertyClass` node. That is a
+  design decision for the retrieval layer, not necessarily a bucket change.
 
 **Tier 5 — Phase 2 preparation**
 - No node type for logging retrieval interactions / recommendation provenance.

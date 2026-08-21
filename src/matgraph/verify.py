@@ -11,6 +11,7 @@ tables with a JSON properties blob, not per-class labels/columns).
 
 from __future__ import annotations
 
+import ast
 import json
 import logging
 from collections import defaultdict
@@ -24,6 +25,32 @@ from matgraph.enrich import DATA_DIR
 from matgraph.pipeline import DATASET_NAME
 
 logger = logging.getLogger(__name__)
+
+
+def _edge_rule(edge_props: dict) -> str | None:
+    """Pull the rule text off a suitable_for edge.
+
+    Not as simple as edge_props["rule"]. Cognee stores an Edge's `properties`
+    dict as a *stringified* Python dict under a single "properties" key, so the
+    rule ends up one level down and serialised:
+
+        {"properties": "{'rule': '0 < band_gap <= 3.5 eV and not metallic'}"}
+
+    A plain edge_props.get("rule") therefore returns None for every edge - it
+    looks like the evidence was never stored when in fact it is there. Parsed
+    with literal_eval rather than eval: this is data read back out of a
+    database, and literal_eval can only construct literals, never execute code.
+    """
+    properties = edge_props.get("properties")
+    if isinstance(properties, str):
+        try:
+            properties = ast.literal_eval(properties)
+        except (ValueError, SyntaxError):
+            return None
+    if isinstance(properties, dict):
+        rule = properties.get("rule")
+        return rule if isinstance(rule, str) and rule.strip() else None
+    return None
 
 
 class Graph:
@@ -119,10 +146,15 @@ async def verify() -> None:
 
         print("\n== Materials suitable for battery_cathode (with rule) ==")
         cathodes = []
+        cathode_rule = None
         for formula, (nid, _) in sorted(materials.items()):
-            for _, dp in g.targets(nid, "suitable_for"):
-                if dp["name"] == "battery_cathode":
+            for tid, edge_props in g.target_edges(nid, "suitable_for"):
+                if g.node[tid]["name"] == "battery_cathode":
                     cathodes.append(formula)
+                    cathode_rule = cathode_rule or _edge_rule(edge_props)
+        # Print the stored evidence, not just the count - this section claims
+        # to show the rule, so it should actually show it.
+        print(f"  rule stored on every one of these edges: {cathode_rule!r}")
         print_sample(cathodes, "materials classified battery_cathode")
 
         print("\n== Application domain distribution ==")
@@ -254,6 +286,26 @@ async def verify() -> None:
             not unclassified,
             "every Material has at least one property classification.",
             f"{len(unclassified)} Material(s) with no classified_as edge: {sample(unclassified)}",
+        )
+
+        # The project's central claim, asserted rather than assumed: every
+        # suitable_for edge must carry the rule text that qualified it. An edge
+        # without it asserts a material is suitable for something with no
+        # stored justification.
+        unjustified = [
+            f"{p['formula']} -> {g.node[tid].get('name')}"
+            for nid, p in material_nodes
+            for tid, edge_props in g.target_edges(nid, "suitable_for")
+            if not _edge_rule(edge_props)
+        ]
+        total_suitable_for = sum(
+            len(g.target_edges(nid, "suitable_for")) for nid, _ in material_nodes
+        )
+        check(
+            not unjustified,
+            f"all {total_suitable_for} suitable_for edges carry the rule text that fired.",
+            f"{len(unjustified)} suitable_for edge(s) with no rule evidence: "
+            f"{sample(unjustified)}",
         )
 
         # Informational, not a failure: enrich.py deliberately skips a single
