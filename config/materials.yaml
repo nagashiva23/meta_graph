@@ -110,19 +110,117 @@ stability_buckets:
   - name: unstable
     min: 0.05
 
-# Application domain rules, evaluated in order; a material can match several.
-# Each fired rule is stored on the `suitable_for` edge for explainability.
+# Application domain rules. A material can match several; every rule that fires
+# stores its `rule` text on the suitable_for edge, which is the graph's audit
+# trail - the stored justification must always describe what the code did.
+#
+# Each rule's thresholds live in `params` next to the text that describes them,
+# so a number cannot be changed without the human-readable rule being right
+# there to update too. The predicate implementing each domain lives in
+# APPLICATION_RULE_PREDICATES in src/matgraph/enrich.py; a startup check asserts
+# the two lists name exactly the same domains, so neither can drift alone.
+#
+# On thresholds generally: these are *screening* criteria, not verdicts. A
+# material qualifying for `photovoltaic_absorber` is a candidate worth
+# examining, not a proven solar cell. Band gaps are DFT values and are
+# systematically underestimated relative to experiment, so gap-based windows
+# are set for DFT-scale numbers.
 application_rules:
   - domain: battery_cathode
     rule: "contains Li and a transition metal, and energy_above_hull <= 0.05 eV/atom"
+    params:
+      max_energy_above_hull: 0.05
+
   - domain: semiconductor_device
     rule: "0 < band_gap <= 3.5 eV and not metallic"
+    params:
+      max_band_gap: 3.5
+
   - domain: photocatalyst
     rule: "contains O and 1.5 <= band_gap <= 3.5 eV"
+    params:
+      min_band_gap: 1.5
+      max_band_gap: 3.5
+
   - domain: dielectric
     rule: "band_gap > 2 eV and |total_magnetization| < 0.1 (non-magnetic)"
+    params:
+      min_band_gap: 2.0
+      max_magnetization: 0.1
+
   - domain: magnetic_material
     rule: "magnetic ordering in {FM, FiM, AFM} and |total_magnetization| >= 0.1, or AFM ordering"
+    params:
+      min_magnetization: 0.1
+
+  # --- domains added in the Tier 4 coverage pass -------------------------
+  # Phase 2 retrieval can only answer questions the graph encodes, so these
+  # widen what a query can ask for. Every one is computable from fields already
+  # cached - no additional API calls.
+
+  - domain: photovoltaic_absorber
+    rule: >-
+      direct band gap between 1.0 and 1.8 eV and not metallic (a direct gap
+      near the Shockley-Queisser optimum, so the material can absorb sunlight
+      strongly in a thin layer)
+    params:
+      min_band_gap: 1.0
+      max_band_gap: 1.8
+
+  # Piezoelectricity and ferroelectricity are permitted or forbidden by the
+  # crystal's point group as a matter of physical law - not by a fitted
+  # threshold. That makes these the most rigorous rules in the set. They screen
+  # on symmetry (see config/space_groups.json), so they say a material *may*
+  # be piezoelectric, never that it is.
+  - domain: piezoelectric
+    rule: >-
+      non-centrosymmetric space group excluding point group 432 (so symmetry
+      permits a piezoelectric response) and not metallic (a conductor screens
+      out the internal field)
+    params: {}
+
+  - domain: ferroelectric
+    rule: >-
+      polar space group (so a spontaneous polarisation can exist along the
+      unique axis) and not metallic
+    params: {}
+
+  - domain: thermoelectric
+    rule: >-
+      narrow band gap between 0.1 and 0.8 eV and not metallic - wide enough to
+      suppress the minority carriers that cancel thermopower, narrow enough to
+      stay conductive
+    params:
+      min_band_gap: 0.1
+      max_band_gap: 0.8
+
+  - domain: uv_transparent
+    rule: >-
+      band gap >= 4.0 eV and |total_magnetization| < 0.1, so the material does
+      not absorb ultraviolet light and has no magnetic absorption channels
+    params:
+      min_band_gap: 4.0
+      max_magnetization: 0.1
+
+  # The two rules below depend on elastic and dielectric data, which Materials
+  # Project has computed for only ~18% and ~20% of these materials. A material
+  # without that data simply cannot match - absence of the edge means "not
+  # known", not "not suitable".
+  - domain: hard_structural
+    rule: >-
+      shear modulus >= 100 GPa and bulk modulus >= 150 GPa (Voigt-Reuss-Hill
+      averages) - resists both shape change and compression
+    params:
+      min_shear_modulus_vrh: 100.0
+      min_bulk_modulus_vrh: 150.0
+
+  - domain: high_k_dielectric
+    rule: >-
+      total dielectric constant >= 20 and band gap > 2 eV - stores charge
+      strongly while remaining insulating
+    params:
+      min_dielectric_total: 20.0
+      min_band_gap: 2.0
 
 # Elements considered "transition metals" for the battery_cathode rule.
 transition_metals:

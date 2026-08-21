@@ -11,10 +11,12 @@ from __future__ import annotations
 import json
 import logging
 import math
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import yaml
+from pymatgen.core import Composition
 
 from matgraph.schema import (
     ApplicationDomain,
@@ -34,6 +36,7 @@ logger = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = ROOT / "config" / "materials.yaml"
 ELEMENTS_PATH = ROOT / "config" / "elements.json"
+SPACE_GROUPS_PATH = ROOT / "config" / "space_groups.json"
 DATA_DIR = ROOT / "data" / "raw"
 
 
@@ -43,6 +46,16 @@ def load_config() -> dict[str, Any]:
 
 def load_elements_table() -> dict[str, dict[str, Any]]:
     return json.loads(ELEMENTS_PATH.read_text())
+
+
+def load_space_groups() -> dict[str, dict[str, Any]]:
+    """Symmetry properties of all 230 space groups, keyed by number as a string.
+
+    Generated once by scripts/generate_space_groups.py. Used by the
+    piezoelectric and ferroelectric rules, which screen on crystal symmetry
+    rather than on any computed value.
+    """
+    return json.loads(SPACE_GROUPS_PATH.read_text())
 
 
 # --- record validation ----------------------------------------------------
@@ -209,36 +222,148 @@ def classify_ordering(ordering: str) -> dict[str, Any] | None:
 # --- application domain rules --------------------------------------------
 
 
+class RuleInput(NamedTuple):
+    """Everything the domain predicates read, computed once per material.
+
+    Exists so each predicate stays a single readable expression rather than
+    re-deriving sets and absolute values, and so predicates can be tested
+    without constructing a full raw MP record.
+    """
+
+    elements: set[str]
+    transition_metals: set[str]
+    band_gap: float
+    is_gap_direct: bool
+    is_metal: bool
+    energy_above_hull: float
+    magnetization: float  # absolute value: MP reports it signed
+    ordering: str
+    bulk_modulus_vrh: float | None
+    shear_modulus_vrh: float | None
+    dielectric_total: float | None
+    polar: bool  # symmetry permits a spontaneous polarisation
+    piezoelectric_allowed: bool  # symmetry permits a piezoelectric response
+
+
+# Each predicate takes the precomputed inputs plus its own `params` block from
+# config/materials.yaml, so every threshold sits beside the rule text that
+# describes it. Keyed by domain name; _assert_rules_match_config() checks these
+# keys against the config on every load.
+APPLICATION_RULE_PREDICATES: dict[str, Callable[[RuleInput, dict[str, Any]], bool]] = {
+    "battery_cathode": lambda m, p: (
+        "Li" in m.elements
+        and bool(m.elements & m.transition_metals)
+        and m.energy_above_hull <= p["max_energy_above_hull"]
+    ),
+    "semiconductor_device": lambda m, p: (
+        0 < m.band_gap <= p["max_band_gap"] and not m.is_metal
+    ),
+    "photocatalyst": lambda m, p: (
+        "O" in m.elements and p["min_band_gap"] <= m.band_gap <= p["max_band_gap"]
+    ),
+    "dielectric": lambda m, p: (
+        m.band_gap > p["min_band_gap"] and m.magnetization < p["max_magnetization"]
+    ),
+    # AFM gets its own branch with no magnetization requirement: an
+    # antiferromagnet's moments cancel to ~zero net magnetization, so requiring
+    # one would exclude exactly the materials the domain is about.
+    "magnetic_material": lambda m, p: (
+        (m.ordering in {"FM", "FiM"} and m.magnetization >= p["min_magnetization"])
+        or m.ordering == "AFM"
+    ),
+    "photovoltaic_absorber": lambda m, p: (
+        m.is_gap_direct
+        and p["min_band_gap"] <= m.band_gap <= p["max_band_gap"]
+        and not m.is_metal
+    ),
+    "piezoelectric": lambda m, p: m.piezoelectric_allowed and not m.is_metal,
+    "ferroelectric": lambda m, p: m.polar and not m.is_metal,
+    "thermoelectric": lambda m, p: (
+        p["min_band_gap"] <= m.band_gap <= p["max_band_gap"] and not m.is_metal
+    ),
+    "uv_transparent": lambda m, p: (
+        m.band_gap >= p["min_band_gap"] and m.magnetization < p["max_magnetization"]
+    ),
+    # The two below need elastic/dielectric data (~18%/~20% coverage). `is not
+    # None` is deliberate: a material with no computed modulus must not match,
+    # and must not be treated as though it had a modulus of zero either.
+    "hard_structural": lambda m, p: (
+        m.shear_modulus_vrh is not None
+        and m.bulk_modulus_vrh is not None
+        and m.shear_modulus_vrh >= p["min_shear_modulus_vrh"]
+        and m.bulk_modulus_vrh >= p["min_bulk_modulus_vrh"]
+    ),
+    "high_k_dielectric": lambda m, p: (
+        m.dielectric_total is not None
+        and m.dielectric_total >= p["min_dielectric_total"]
+        and m.band_gap > p["min_band_gap"]
+    ),
+}
+
+
+def _assert_rules_match_config(config: dict[str, Any]) -> None:
+    """Fail loudly if config and predicates disagree about which domains exist.
+
+    Without this, adding a rule to materials.yaml but not here would silently
+    produce a domain that never fires, and the reverse would produce a
+    suitable_for edge with no rule text - an edge asserting something with no
+    stored justification, which is the one thing this graph must never do.
+    """
+    configured = {rule["domain"] for rule in config["application_rules"]}
+    implemented = set(APPLICATION_RULE_PREDICATES)
+    if configured != implemented:
+        raise ValueError(
+            "application_rules in config/materials.yaml and "
+            "APPLICATION_RULE_PREDICATES disagree: "
+            f"config-only={sorted(configured - implemented)}, "
+            f"code-only={sorted(implemented - configured)}"
+        )
+
+
+def build_rule_input(
+    material: dict[str, Any], config: dict[str, Any], space_groups: dict[str, dict[str, Any]]
+) -> RuleInput:
+    symmetry = space_groups.get(str(material["symmetry"]["number"]), {})
+    return RuleInput(
+        elements=set(material["elements"]),
+        transition_metals=set(config["transition_metals"]),
+        band_gap=material["band_gap"],
+        is_gap_direct=bool(material["is_gap_direct"]),
+        is_metal=bool(material["is_metal"]),
+        energy_above_hull=material["energy_above_hull"],
+        magnetization=abs(material["total_magnetization"]),
+        ordering=material["ordering"],
+        bulk_modulus_vrh=_vrh(material.get("bulk_modulus")),
+        shear_modulus_vrh=_vrh(material.get("shear_modulus")),
+        dielectric_total=material.get("e_total"),
+        polar=bool(symmetry.get("polar", False)),
+        piezoelectric_allowed=bool(symmetry.get("piezoelectric_allowed", False)),
+    )
+
+
 def apply_application_rules(
-    material: dict[str, Any], config: dict[str, Any]
+    material: dict[str, Any],
+    config: dict[str, Any],
+    space_groups: dict[str, dict[str, Any]] | None = None,
 ) -> list[tuple[str, str]]:
-    """Return [(domain_name, rule_text), ...] for every rule this material satisfies."""
-    elements = set(material["elements"])
-    transition_metals = set(config["transition_metals"])
-    band_gap = material["band_gap"]
-    is_metal = material["is_metal"]
-    e_hull = material["energy_above_hull"]
-    total_mag = abs(material["total_magnetization"])
-    ordering = material["ordering"]
+    """Return [(domain_name, rule_text), ...] for every rule this material satisfies.
+
+    Rules are evaluated in the order they appear in config, and a material can
+    match any number of them - which is why suitable_for edges (1,506)
+    outnumber materials (794).
+    """
+    _assert_rules_match_config(config)
+    if space_groups is None:
+        space_groups = load_space_groups()
+
+    rule_input = build_rule_input(material, config, space_groups)
 
     matches: list[tuple[str, str]] = []
-    rules_by_domain = {r["domain"]: r["rule"] for r in config["application_rules"]}
-
-    if "Li" in elements and elements & transition_metals and e_hull <= 0.05:
-        matches.append(("battery_cathode", rules_by_domain["battery_cathode"]))
-
-    if 0 < band_gap <= 3.5 and not is_metal:
-        matches.append(("semiconductor_device", rules_by_domain["semiconductor_device"]))
-
-    if "O" in elements and 1.5 <= band_gap <= 3.5:
-        matches.append(("photocatalyst", rules_by_domain["photocatalyst"]))
-
-    if band_gap > 2 and total_mag < 0.1:
-        matches.append(("dielectric", rules_by_domain["dielectric"]))
-
-    if (ordering in {"FM", "FiM"} and total_mag >= 0.1) or ordering == "AFM":
-        matches.append(("magnetic_material", rules_by_domain["magnetic_material"]))
-
+    for rule in config["application_rules"]:
+        domain = rule["domain"]
+        predicate = APPLICATION_RULE_PREDICATES[domain]
+        if predicate(rule_input, rule.get("params") or {}):
+            matches.append((domain, rule["rule"]))
     return matches
 
 
@@ -365,6 +490,39 @@ def compute_similarity_edges(
     return edges
 
 
+def atomic_fractions(formula: str, elements: list[str]) -> dict[str, float] | None:
+    """Fraction of atoms each element contributes, e.g. LiFePO4 ->
+    {Li: 1/7, Fe: 1/7, P: 1/7, O: 4/7}.
+
+    Stored as the weight on each `contains` edge (the original design in
+    docs/PHASE1_PLAN.md, never implemented until now). Without it, the edge
+    from LiFePO4 to O and the edge from LiFePO4 to Li look identical, even
+    though oxygen is four sevenths of the atoms and lithium one seventh - so
+    "materials where lithium is a major constituent" is not answerable.
+
+    Returns None if the formula cannot be parsed or does not account for every
+    element on the record; the caller then builds unweighted edges rather than
+    inventing a number.
+    """
+    try:
+        composition = Composition(formula).fractional_composition.as_dict()
+    except Exception as exc:  # pymatgen raises several types for a bad formula
+        logger.warning("could not parse formula %r for contains weights: %s", formula, exc)
+        return None
+
+    fractions = {str(symbol): float(fraction) for symbol, fraction in composition.items()}
+    missing = [symbol for symbol in elements if symbol not in fractions]
+    if missing:
+        logger.warning(
+            "formula %r does not account for element(s) %s; contains edges "
+            "for this material will be unweighted",
+            formula,
+            ", ".join(missing),
+        )
+        return None
+    return fractions
+
+
 def _vrh(value: dict[str, float] | None) -> float | None:
     """Extract the Voigt-Reuss-Hill average from an elastic modulus dict
     (e.g. {"voigt": .., "reuss": .., "vrh": ..}); None when not computed."""
@@ -385,6 +543,9 @@ def build_graph(
     # material_id, and an edge pointing at a skipped material would KeyError
     # when the similar_to edges are wired up at the end of this function.
     raw_materials = filter_valid_materials(raw_materials)
+
+    space_groups = load_space_groups()
+    _assert_rules_match_config(config)
 
     element_cache: dict[str, Element] = {}
     crystal_system_cache: dict[str, CrystalSystem] = {}
@@ -468,7 +629,16 @@ def build_graph(
 
     material_nodes: dict[str, Material] = {}
     for raw in raw_materials:
-        contains = [get_element(sym) for sym in raw["elements"]]
+        fractions = atomic_fractions(raw["formula_pretty"], raw["elements"])
+        contains = [
+            (
+                Edge(relationship_type="contains", weight=fractions[sym])
+                if fractions
+                else Edge(relationship_type="contains"),
+                get_element(sym),
+            )
+            for sym in raw["elements"]
+        ]
         symmetry = raw["symmetry"]
         space_group = get_space_group(
             symmetry["symbol"], symmetry["number"], symmetry["crystal_system"]
@@ -491,7 +661,7 @@ def build_graph(
             get_property_class(c["kind"], c["name"], c["description"]) for c in classifications
         ]
 
-        domain_matches = apply_application_rules(raw, config)
+        domain_matches = apply_application_rules(raw, config, space_groups)
         suitable_for = [
             (Edge(relationship_type="suitable_for", properties={"rule": rule}), get_domain(name))
             for name, rule in domain_matches
