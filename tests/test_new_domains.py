@@ -209,25 +209,25 @@ class TestEdgeRuleExtraction:
     """
 
     def test_reads_a_rule_from_cognees_stringified_properties(self):
-        from matgraph.verify import _edge_rule
+        from matgraph.graph_store import edge_rule as _edge_rule
 
         edge = {"properties": "{'rule': '0 < band_gap <= 3.5 eV and not metallic'}"}
         assert _edge_rule(edge) == "0 < band_gap <= 3.5 eV and not metallic"
 
     def test_reads_a_rule_from_a_real_dict_too(self):
-        from matgraph.verify import _edge_rule
+        from matgraph.graph_store import edge_rule as _edge_rule
 
         assert _edge_rule({"properties": {"rule": "contains Li"}}) == "contains Li"
 
     def test_returns_none_when_there_is_no_evidence(self):
-        from matgraph.verify import _edge_rule
+        from matgraph.graph_store import edge_rule as _edge_rule
 
         assert _edge_rule({}) is None
         assert _edge_rule({"properties": "{}"}) is None
         assert _edge_rule({"properties": "{'rule': '   '}"}) is None
 
     def test_malformed_properties_do_not_raise(self):
-        from matgraph.verify import _edge_rule
+        from matgraph.graph_store import edge_rule as _edge_rule
 
         # Parsed with literal_eval, which cannot execute code - this is data
         # read back out of a database.

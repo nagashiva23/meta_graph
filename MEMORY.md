@@ -16,7 +16,7 @@ changed, and anything it deliberately did *not* do.
 |---|---|---|
 | **Phase 1** | Knowledge graph construction from Materials Project data | ✅ Complete, and **independently reproduced** on 2026-08-21 |
 | **Phase 1.5** | Robustness/scalability hardening before retrieval work | 🔨 Tiers 1, 2, 4, 6 done; Tiers 3 and 5 open |
-| Phase 2 | GraphRAG retrieval + LLM-generated, evidence-backed recommendations | ⬜ Not started |
+| **Phase 2** | GraphRAG retrieval + LLM-generated, evidence-backed recommendations | 🔨 Step 1 (deterministic retrieval) done in PR #3; query parsing and generation remain |
 | Phase 3 | CGCNN crystal-structure embeddings, structural similarity, element substitution | ⬜ Not started |
 
 **Current graph (after PR #2):** 1,511 nodes (794 Materials, 261
@@ -34,6 +34,95 @@ figures (756 O-containing, 80 Li-stable, 143 wide-gap, O²⁻ in 695, Ti⁴⁺ i
 ---
 
 ## PR log
+
+### PR #3 — Phase 2, step 1: deterministic retrieval (branch `feat/phase2-retrieval`)
+
+**Why built this way:** Phase 2 splits cleanly into a deterministic half (turn
+constraints into candidates plus the evidence backing each) and a generative
+half (write prose from that evidence). Building the deterministic half first
+means that by the time a language model is involved, everything it is shown has
+already been verified against the graph — and no `LLM_API_KEY` was needed to
+make real Phase 2 progress.
+
+**`src/matgraph/retrieval.py`** — the query layer.
+
+- **Strict conjunctions, not soft scoring.** Every returned material satisfies
+  every constraint. A caller asking for stable lithium cathodes must not receive
+  an unstable sodium one ranked 7th. Ranking is a plain sort on a stored value
+  (`energy_above_hull` by default), so the ordering is as explainable as the
+  filtering — no learned or blended score.
+- **Every hit carries its evidence**: the specific edges and attribute values
+  that made it match, including the stored rule text for an application domain
+  and the atomic fraction on a `contains` edge. Only facts *relevant to the
+  query* are collected — dumping all ~19 edges a material has would bury the
+  reason it was returned, and this list is intended to be the sole context the
+  generation step is given.
+- **Traversal runs inwards.** Edges point Material → Element, but a query asks
+  "which materials contain iron?", so retrieval starts at the Fe node and walks
+  incoming edges. Elements are hubs, so this touches one node and its edge list
+  instead of scanning all 794.
+- **Crystal system is a real 2-hop walk** (Material → SpaceGroup →
+  CrystalSystem). There is no direct edge, because the space group is the finer
+  fact and the crystal system is derived from it; storing both directly would
+  let them contradict each other.
+- **Unknown entities raise rather than return nothing.** "No material contains
+  Unobtainium" and "you misspelled Uranium" are different answers; conflating
+  them misleads whatever consumes retrieval.
+
+**`src/matgraph/graph_store.py`** — extracted from `verify.py`, which held the
+only copy of the graph index and the edge-property reader. Retrieval needs both
+and a second copy would drift. Refactor verified behaviour-preserving:
+`verify.py` produces identical output against the real graph. It also
+centralises the two cognee storage quirks that silently produce wrong answers
+(stringified `properties`, string-typed `weight`).
+
+**`scripts/eval_retrieval.py` — the piece that actually earns trust.** Unit
+tests prove the traversal logic against a hand-built graph, but they cannot
+prove the *real* graph was built correctly, because both the graph and the
+expectation would come from the same code. So the harness answers each query
+twice: once by traversing the built graph, and once by filtering
+`data/raw/*.json` in plain Python, never touching cognee or `enrich.py`. That
+second route is an independent oracle over the same Materials Project records
+the graph was built from.
+
+**All 14 queries agree exactly** — including the symmetry-screened domains and
+the 2-hop crystal-system walk:
+
+| Query | Graph | Oracle |
+|---|---|---|
+| materials containing lithium | 245 | 245 |
+| stable lithium-containing materials | 80 | 80 |
+| wide-band-gap materials | 143 | 143 |
+| battery cathode candidates | 237 | 237 |
+| piezoelectric candidates | 130 | 130 |
+| ferroelectric candidates | 94 | 94 |
+| photovoltaic absorbers | 22 | 22 |
+| materials containing Ti⁴⁺ | 107 | 107 |
+| ABC3 perovskite pattern | 44 | 44 |
+| cubic materials (2-hop) | 87 | 87 |
+| cubic oxides, gap > 2 eV | 19 | 19 |
+
+This validates the whole chain — fetch → enrich → build → store → traverse.
+
+**One investigation worth recording.** Querying Cubic and Tetragonal both
+returned exactly 87 materials, which looked like a bug where a lookup was
+matching the wrong node. It was genuine coincidence: summing materials across
+all seven crystal systems gives exactly 794 and space groups exactly 106, so
+every material and space group is accounted for once. Separately, Ti⁴⁺ ∩ Cubic
+returned 0, which the oracle confirmed is a true answer — none of the 107 Ti⁴⁺
+materials are cubic.
+
+**`scripts/query_graph.py`** — CLI over the same calls the generation step will
+make, so whatever the model eventually says can be checked against what this
+prints. Sanity results: `--similar-to BaTiO3` returns Ti₃PbO₇, Ba₅Nb₄O₁₅ and
+Sr₂Ta₂O₇ (all perovskite-family oxides), and `--connects LiFePO4 Fe2O3` returns
+shared Fe, O, the stable class and O²⁻.
+
+**Tests: 132 → 170.** The synthetic graph in `tests/test_retrieval.py`
+deliberately reproduces cognee's storage quirks rather than using tidied-up
+fixtures — tests against clean fixtures would pass while the real retrieval
+path returned nothing.
+
 
 ### PR #2 — Tier 4: domain coverage, symmetry screening, weighted edges (branch `feat/tier4-domain-coverage`)
 
@@ -420,6 +509,11 @@ hardening review:
 
 **Tier 5 — Phase 2 preparation**
 - No node type for logging retrieval interactions / recommendation provenance.
+- **Next for Phase 2** (in order): natural-language query → `Constraints`
+  parsing (the first step needing an `LLM_API_KEY`); vector-search fallback over
+  `Material_description` for free-text remainders; then evidence-grounded
+  generation, which is deliberately last so every input to the model is already
+  verified.
 - ~~Cognee's `index_fields` auto-embedding into LanceDB is unverified.~~
   ✅ Resolved by the verification run: 794 rows of 384-dim non-zero embeddings
   in both `Material_description` and `Material_formula`.
