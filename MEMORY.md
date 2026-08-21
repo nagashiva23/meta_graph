@@ -30,16 +30,58 @@ changed, and anything it deliberately did *not* do.
 
 ### PR #1 — Tier 1 robustness hardening (branch `hardening/tier1-robustness`)
 
-**Status:** in progress
-
 **Why:** Phase 2's retrieval layer will be built directly on top of the graph
-produced by `enrich.py`. Before adding an LLM on top, the graph-construction
-path needed to stop being able to fail in silent or all-or-nothing ways. Four
-concrete failure modes were identified in a code review of the Phase 1
-codebase (see "Known gaps" below for the ones deliberately deferred).
+produced by `enrich.py`. Before putting an LLM on top of it, the
+graph-construction path needed to stop failing in all-or-nothing ways, and
+verification needed to be able to actually fail. Four failure modes were fixed;
+higher tiers were deliberately deferred (see "Known gaps").
 
-**Changes:** documented per-commit as they land — see the commits on this
-branch. Summary will be filled in when the PR is opened.
+**1. One unclassifiable value no longer aborts the whole build** (`enrich.py`)
+`_bucket()` raised `ValueError` when a value matched no configured bucket, so a
+single malformed material killed the entire run. The realistic trigger is a
+`NaN` band gap — `NaN` fails every comparison, falls through all buckets, and
+hits the raise. It now returns `None`; the caller logs a warning and skips just
+that one classification, matching the convention `classify_ordering` already
+used. All existing bucket boundaries verified unchanged.
+
+**2. Incomplete cache records are skipped, not crashed on** (`enrich.py`)
+Core fields were read by direct indexing (`raw["band_gap"]`), so one record
+missing a key raised `KeyError` and aborted the build. Records are now
+validated up front and skipped with a warning naming the material and the
+missing fields.
+
+*Deliberately skipped rather than defaulted:* substituting `0.0` for an absent
+band gap would classify that material as a metal, and `0.0` for an absent
+`energy_above_hull` would classify it as perfectly stable — silently corrupting
+every downstream query instead of failing visibly.
+
+*Two subtleties worth remembering:* validation runs **before**
+`compute_similarity_edges`, so a `similar_to` edge can never point at a
+material that was later skipped (which would `KeyError` when edges are wired
+up). And missing-ness is tested with `is None`, not falsiness — otherwise
+`band_gap = 0.0` (every metal) and `is_metal = False` would be read as missing
+and dropped from the graph.
+
+**3. Comments that contradicted the code** (`materials.yaml`, `mp_client.py`,
+`enrich.py`) — `similar_to` was still described as a 4-field vector (it has
+been 10 since the elastic/dielectric data landed), and two files still cited
+the old, sampling-biased ~84%/~70% coverage estimate instead of the measured
+18.0%/19.9%. Comments only, no behaviour change.
+
+**4. Verification actually fails now** (`verify.py`)
+It printed `!!` for problems but only asserted that at least one Material
+existed — so a build with isolated materials or missing space groups exited 0
+and looked successful. Checks are now collected and raise, so
+`scripts/build_graph.py` exits non-zero. Added the checks the README already
+*claimed* were running: Material count matches the fetch manifest (never
+actually verified before), every Material has exactly one `has_space_group`
+edge, and at least one `classified_as` edge.
+
+**Not done in this PR:** no test suite yet (Tier 2), and none of this has been
+validated against a real pipeline run — the environment still has no
+`MP_API_KEY`, `.venv/`, or cached data. Each change was verified by exercising
+the extracted logic in isolation, which is a weaker guarantee than a real
+build.
 
 ---
 
@@ -163,10 +205,17 @@ way:
 Tracked honestly rather than hidden. Ordered by the tier system used in the
 hardening review:
 
-**Tier 2 — testing**
+**Tier 2 — testing** (next up)
 - No `tests/` directory exists. It was planned in `docs/PHASE1_PLAN.md` and
   never built. There is zero automated coverage of the classification rules,
   application-domain rules, or similarity math.
+- **Blocker discovered in PR #1:** `enrich.py` imports `schema.py`, which
+  imports `cognee` — so none of `enrich.py`'s pure logic (bucketing, domain
+  rules, z-scoring, cosine similarity) can be imported for testing without the
+  full heavy dependency stack installed. Verification in PR #1 had to extract
+  functions via `ast` and exec them in isolation, which is not a sustainable
+  testing strategy. Splitting the pure computation out from the DataPoint
+  construction would make this directly testable.
 
 **Tier 3 — scalability**
 - Adding a new cluster to `materials.yaml` does not trigger a fetch for it;
