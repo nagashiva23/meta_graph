@@ -298,11 +298,17 @@ def _similarity_value(raw: dict[str, Any], field: str) -> float | None:
 
 
 def _zscore_vectors(materials: list[dict[str, Any]]) -> dict[str, list[float]]:
-    """Z-score every similarity field, imputing missing values (elastic and
-    dielectric data aren't computed for every material - roughly 84% and 70%
-    coverage respectively) with the column mean, so a missing value
-    contributes neutrally (z=0) rather than skewing the comparison in either
-    direction."""
+    """Z-score every similarity field, imputing missing values with the column
+    mean so a missing value contributes neutrally (z=0) rather than skewing the
+    comparison in either direction.
+
+    Imputation matters here because coverage is low: elastic data is present
+    for 18.0% of materials and dielectric for 19.9% (measured across the full
+    794-material set). Dropping those materials, or treating missing as zero,
+    would either shrink the graph drastically or fabricate signal - so a
+    material with no elastic data still gets meaningful similar_to edges from
+    its remaining dimensions.
+    """
     columns = {f: [_similarity_value(m, f) for m in materials] for f in SIMILARITY_FIELDS}
     stats = {}
     for f, values in columns.items():
