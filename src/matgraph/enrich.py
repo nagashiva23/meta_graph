@@ -45,6 +45,91 @@ def load_elements_table() -> dict[str, dict[str, Any]]:
     return json.loads(ELEMENTS_PATH.read_text())
 
 
+# --- record validation ----------------------------------------------------
+
+# Every field a Material node needs to exist at all: schema.Material declares
+# each of these non-optional (no default), and apply_application_rules reads
+# several of them directly off the raw record.
+#
+# A record missing any of them is skipped, not defaulted. Substituting 0.0 for
+# an absent band_gap would classify that material as a metal, and substituting
+# 0.0 for an absent energy_above_hull would classify it as perfectly stable -
+# both would silently corrupt every downstream query rather than failing
+# visibly. Skipping loses one material; defaulting poisons the graph.
+REQUIRED_RAW_FIELDS = (
+    "material_id",
+    "formula_pretty",
+    "chemsys",
+    "elements",
+    "symmetry",
+    "band_gap",
+    "is_gap_direct",
+    "is_metal",
+    "formation_energy_per_atom",
+    "energy_above_hull",
+    "is_stable",
+    "density",
+    "volume",
+    "nsites",
+    "total_magnetization",
+    "ordering",
+    "theoretical",
+)
+
+_SYMMETRY_SUBFIELDS = ("symbol", "number", "crystal_system")
+
+
+def _missing_fields(raw: dict[str, Any]) -> list[str]:
+    """Names of required fields absent from a raw MP record.
+
+    Uses `is None` rather than falsiness so legitimate values - False for
+    is_metal, 0.0 for the band gap of a metal - are not mistaken for missing.
+    """
+    missing = [field for field in REQUIRED_RAW_FIELDS if raw.get(field) is None]
+
+    # elements must be non-empty: every Material is expected to have at least
+    # one `contains` edge, and verify.py asserts exactly that.
+    if raw.get("elements") is not None and not raw["elements"]:
+        missing.append("elements (empty)")
+
+    symmetry = raw.get("symmetry")
+    if symmetry is not None:
+        missing += [
+            f"symmetry.{sub}" for sub in _SYMMETRY_SUBFIELDS if symmetry.get(sub) is None
+        ]
+
+    return missing
+
+
+def filter_valid_materials(raw_materials: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop raw records that can't produce a valid Material, loudly.
+
+    Filtering happens before similarity is computed so that similar_to edges
+    can never point at a material that was subsequently skipped.
+    """
+    valid: list[dict[str, Any]] = []
+    for raw in raw_materials:
+        missing = _missing_fields(raw)
+        if missing:
+            logger.warning(
+                "skipping %s: missing required field(s): %s",
+                raw.get("material_id", "<unknown material_id>"),
+                ", ".join(missing),
+            )
+        else:
+            valid.append(raw)
+
+    skipped = len(raw_materials) - len(valid)
+    if skipped:
+        logger.warning(
+            "skipped %d of %d cached records as incomplete; building graph from %d",
+            skipped,
+            len(raw_materials),
+            len(valid),
+        )
+    return valid
+
+
 def load_raw_materials(config: dict[str, Any]) -> list[dict[str, Any]]:
     """Load every cached material from data/raw/ (one JSON file per material_id,
     listed in _manifest.json - see matgraph.mp_client.fetch_and_cache_bulk)."""
@@ -290,6 +375,11 @@ def build_graph(
 ) -> list[Material]:
     """Build the full set of interconnected DataPoint nodes for all materials."""
 
+    # Must happen before compute_similarity_edges below: similarity is keyed by
+    # material_id, and an edge pointing at a skipped material would KeyError
+    # when the similar_to edges are wired up at the end of this function.
+    raw_materials = filter_valid_materials(raw_materials)
+
     element_cache: dict[str, Element] = {}
     crystal_system_cache: dict[str, CrystalSystem] = {}
     space_group_cache: dict[str, SpaceGroup] = {}
@@ -301,7 +391,15 @@ def build_graph(
 
     def get_element(symbol: str) -> Element:
         if symbol not in element_cache:
-            info = elements_table[symbol]
+            info = elements_table.get(symbol)
+            if info is None:
+                # Shouldn't happen: config/elements.json covers Z=1-103, which
+                # spans every element Materials Project reports. A bare KeyError
+                # here would be opaque, so name the fix instead.
+                raise KeyError(
+                    f"element {symbol!r} is not in config/elements.json - "
+                    "regenerate it with scripts/generate_elements.py"
+                )
             element_cache[symbol] = Element(
                 symbol=symbol,
                 name=info["name"],
@@ -406,7 +504,10 @@ def build_graph(
         material_nodes[raw["material_id"]] = Material(
             material_id=raw["material_id"],
             formula=raw["formula_pretty"],
-            description=raw["description"] or f"{raw['formula_pretty']} (no description available)",
+            # robocrys text is optional - not every material has one, and the
+            # key is absent entirely if the batch fetch skipped it.
+            description=raw.get("description")
+            or f"{raw['formula_pretty']} (no description available)",
             band_gap=raw["band_gap"],
             is_gap_direct=raw["is_gap_direct"],
             is_metal=raw["is_metal"],
